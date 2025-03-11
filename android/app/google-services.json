@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616620852976",
+    "project_id": "adaptive-learning-app-364d1",
+    "storage_bucket": "adaptive-learning-app-364d1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616620852976:android:1ccfe05a66525cb4852435",
+        "android_client_info": {
+          "package_name": "com.anonymous.adaptivelearningapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcF92uIYuS0d8NbyFmtR3f3D9eSPyM8qk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
