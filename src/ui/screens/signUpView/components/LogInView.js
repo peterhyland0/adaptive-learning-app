@@ -25,8 +25,8 @@ export default class LogInView extends Component {
     this.setState({ loading: true, errorMessage: "" });
 
     try {
-      await login(email, password);  // Assuming this function authenticates the user
-      this.props.navigation.navigate('SplashScreen');  // Navigate to SplashScreen after successful login
+      await login(email, password);
+      this.props.navigation.navigate('SplashScreen');
       this.setState({ loading: false });
     } catch (error) {
       let message = "Login failed: " + error.message; // Default error message

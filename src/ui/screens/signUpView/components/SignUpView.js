@@ -2,23 +2,23 @@ import React, { Component } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { TextInput, Snackbar } from "react-native-paper";
 import COLORS from "../../../../constants/COLORS";
-import { signUp } from "../../../../api/SignUp";
+import { signUp } from "../../../../api/signUp";
 
 export default class SignUpView extends Component {
   state = {
     email: "",
     password: "",
-    username: "",
+    // username: "",
     errorMessage: "",
     loading: false,
     visible: false,
   };
 
   handleSignUp = async () => {
-    const { email, password, username } = this.state;
+    const { email, password } = this.state;
 
     // Check for empty fields
-    if (!email.trim() || !password.trim() || !username.trim()) {
+    if (!email.trim() || !password.trim() ) {
       this.setState({
         errorMessage: "All fields are required.",
         visible: true,
@@ -29,7 +29,7 @@ export default class SignUpView extends Component {
     this.setState({ loading: true, errorMessage: "" });
 
     try {
-      await signUp(email, password, { username });
+      await signUp(email, password);
       // Handle successful signup, e.g., navigate to another screen or clear the form
     } catch (error) {
       this.setState({
@@ -41,7 +41,7 @@ export default class SignUpView extends Component {
   };
 
   render() {
-    const { username, email, password, errorMessage, loading, visible } = this.state;
+    const {  email, password, errorMessage, loading, visible } = this.state;
     const { openLogInView } = this.props;
 
     return (
@@ -61,14 +61,14 @@ export default class SignUpView extends Component {
           Sign Up
         </Text>
 
-        <TextInput
-          label="Username"
-          mode="outlined"
-          value={username}
-          onChangeText={(text) => this.setState({ username: text })}
-          style={{ marginBottom: 16, color: COLORS.MAROON }}
-          theme={{ colors: { text: COLORS.MAROON, primary: COLORS.MAROON } }}
-        />
+        {/*<TextInput*/}
+        {/*  label="Username"*/}
+        {/*  mode="outlined"*/}
+        {/*  value={username}*/}
+        {/*  onChangeText={(text) => this.setState({ username: text })}*/}
+        {/*  style={{ marginBottom: 16, color: COLORS.MAROON }}*/}
+        {/*  theme={{ colors: { text: COLORS.MAROON, primary: COLORS.MAROON } }}*/}
+        {/*/>*/}
 
         <TextInput
           label="Email"

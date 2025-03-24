@@ -4,8 +4,7 @@ import { SessionContext } from "../../../util/SessionContext";
 import SignUpView from "./components/SignUpView";
 import LogInView from "./components/LogInView";
 import WelcomeView from "./components/WelcomeView";
-import LearningStyleForm from "../learningStyleView/LearningStyleForm";
-import UploadManagementScreen from "../uploadView/UploadManagementScreen";
+
 import auth from "@react-native-firebase/auth";
 import checkNetworkConnected from "../../../util/checkNetworkConnected";
 import {login} from "../../../api/LogIn";
@@ -39,7 +38,7 @@ export default class SignUpManagementScreen extends Component {
     this.authSubscriber = auth().onAuthStateChanged(user => {
       if (user) {
         user.getIdToken().then(token => {
-          this.context.setSession({ token, username: user.email });
+          this.context.setSession({ token, userUid: user.uid, email: user.email });
           this.setState({
             isLoggedIn: true,
             deviceSignUpView: false,
@@ -85,7 +84,7 @@ export default class SignUpManagementScreen extends Component {
 
   handleLogIn = async (email, password) => {
     try {
-      await login(email, password);  // Assuming this function authenticates the user
+      await login(email, password);
 
       this.setState({
         isLoggedIn: true,
@@ -115,34 +114,19 @@ export default class SignUpManagementScreen extends Component {
     });
   };
 
-  openWelcomeView = () => {
-    this.setState({
-      deviceLogInView: false,
-      deviceSignUpView: false,
-      deviceWelcomeView: true,
-    });
-  };
 
-  openLearningStyleFormView = () => {
-    this.setState({
-      deviceSignUpView: false,
-      deviceLogInView: false,
-      deviceWelcomeView: false,
-      deviceLearningStyleFormView: true,
-    });
-  };
 
 
   render() {
-    const { deviceSignUpView, deviceLogInView, deviceWelcomeView, isLoggedIn, deviceLearningStyleFormView } = this.state;
+    const { deviceSignUpView, deviceLogInView, deviceWelcomeView, isLoggedIn } = this.state;
 
     return (
       <View style={{ flex: 1 }}>
         <StatusBar
-          backgroundColor="transparent"  // Android-only, sets the status bar's background color
+          backgroundColor="transparent"
           textColor="black"
           translucent
-          barStyle="dark-content"   // iOS & Android, sets the text/icons color
+          barStyle="dark-content"
         />
         {deviceSignUpView && !isLoggedIn && (
           <SignUpView
@@ -161,11 +145,6 @@ export default class SignUpManagementScreen extends Component {
             openLearningStyleForm={() => this.props.navigation.replace("LearningStyleForm")}
           />
         )}
-        {/*{deviceLearningStyleFormView && (*/}
-        {/*  <LearningStyleForm*/}
-        {/*    openNextView={() => this.props.navigation.replace("Upload")}*/}
-        {/*  />*/}
-        {/*)}*/}
       </View>
     );
   }

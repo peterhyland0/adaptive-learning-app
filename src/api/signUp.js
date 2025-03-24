@@ -2,8 +2,8 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 // Sign Up Function
-export const signUp = async (email, password, username) => {
-  console.log('Email:', email, 'Password:', password, 'Additional Info:', username);
+export const signUp = async (email, password) => {
+  console.log('Email:', email, 'Password:', password, 'Additional Info:');
 
   try {
     // Create user with email and password
@@ -14,7 +14,7 @@ export const signUp = async (email, password, username) => {
     // Add additional info to Firestore
     await firestore().collection('users').doc(user.uid).set({
       email: user.email,
-      username: username || '',
+      // username: username || '',
       // phoneNumber: additionalInfo.phoneNumber || '',
       // profilePicture: additionalInfo.profilePicture || '',
       createdAt: firestore.FieldValue.serverTimestamp(),

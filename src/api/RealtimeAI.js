@@ -6,25 +6,20 @@ export default class RealtimeAI extends Component {
   constructor(props) {
     super(props);
     this.pc = null;
-    this.dc = null; // Will hold the data channel
-    // Save module content for later use in start()
-    // Make sure the parent passes in { moduleContent: "your content string" }
+    this.dc = null;
     this.moduleContent = props.moduleContent;
   }
 
-  // Start the realtime connection (audio + data channel)
   start = async () => {
     try {
       console.log("RealtimeAI props:", this.props);
-      // 1. Get an ephemeral key from your backend
       const tokenResponse = await fetch("http://127.0.0.1:8000/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: this.moduleContent }),
       });
       const data = await tokenResponse.json();
-      // Token response can be in two shapes:
-      // { client_secret: { value: "TOKEN" } } or { client_secret: "TOKEN" }
+
       const EPHEMERAL_KEY =
         data.client_secret && data.client_secret.value
           ? data.client_secret.value
@@ -39,7 +34,6 @@ export default class RealtimeAI extends Component {
       // 3. Handle remote audio tracks
       this.pc.ontrack = (event) => {
         console.log("Received remote stream", event.streams[0]);
-        // (Implement audio playback as needed.)
       };
 
       // 4. Capture local audio from the microphone
@@ -53,7 +47,6 @@ export default class RealtimeAI extends Component {
       this.dc = dc;
       dc.onmessage = (e) => {
         console.log("Received event:", e.data);
-        // (You can parse and handle incoming text/chat messages here.)
       };
 
       // 6. Create an SDP offer and set local description
@@ -104,7 +97,6 @@ export default class RealtimeAI extends Component {
       // 3. Handle remote audio tracks
       this.pc.ontrack = (event) => {
         console.log("Received remote stream", event.streams[0]);
-        // (Implement audio playback as needed.)
       };
 
       // 4. Capture local audio from the microphone

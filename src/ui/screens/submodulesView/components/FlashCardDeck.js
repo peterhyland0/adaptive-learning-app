@@ -1,8 +1,9 @@
 import React, { Component } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import Swiper from "react-native-deck-swiper";
-import FlashCard from "./FlashCard"; // Adjust the path as needed
+import FlashCard from "./FlashCard";
 import CircularProgress from "react-native-circular-progress-indicator";
+import COLORS from "../../../../constants/COLORS";
 
 class FlashCardDeck extends Component {
   constructor(props) {
@@ -15,14 +16,47 @@ class FlashCardDeck extends Component {
       sessionComplete: false,
       progressUpdated: false,
     };
+    const windowDimensions = Dimensions.get("window");
+    this.windowWidth = windowDimensions.width;
+    this.windowHeight = windowDimensions.height;
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    // When sessionComplete changes to true and progress hasn't been updated yet,
+    // update the quiz progress.
+    if (
+      !prevState.sessionComplete &&
+      this.state.sessionComplete &&
+      !this.state.progressUpdated
+    ) {
+      const total = this.state.knowList.length + this.state.dontKnowList.length;
+      const score = this.state.knowList.length;
+
+      // Update the progress regardless of whether all answers are correct.
+      this.props.updateQuizProgress({ score, total });
+
+      // Mark progress as updated so we don't update again.
+      this.setState({ progressUpdated: true });
+
+      // If there are no unknown cards, navigate to the results screen.
+      if (this.state.dontKnowList.length === 0) {
+        const learningStyle = this.props.learningStyle || "kinesthetic";
+        this.props.navigation.navigate("SubmoduleResultsScreen", {
+          correctPercentage: total ? (score / total) * 100 : 0,
+          learningStyle,
+        });
+      }
+    }
+  }
   onSwipedLeft = (cardIndex) => {
     const card = this.state.cards[cardIndex];
     if (card) {
       this.setState((prevState) => ({
         dontKnowList: [...prevState.dontKnowList, card],
       }));
+    }
+    if (cardIndex === this.state.cards.length - 1) {
+      this.handleComplete();
     }
   };
 
@@ -33,26 +67,9 @@ class FlashCardDeck extends Component {
         knowList: [...prevState.knowList, card],
       }));
     }
-  };
-
-  renderCard = (card, index) => {
-    if (!card) {
-      return (
-        <Text style={{ fontSize: 22, color: "gray", textAlign: "center" }}>
-          No more cards
-        </Text>
-      );
+    if (cardIndex === this.state.cards.length - 1) {
+      this.handleComplete();
     }
-    return (
-      <FlashCard
-        card={card}
-        hideText={index !== 0 && this.state.flipInProgress}
-        {...(index === 0 && {
-          onFlipStart: () => this.setState({ flipInProgress: true }),
-          onFlipEnd: () => this.setState({ flipInProgress: false }),
-        })}
-      />
-    );
   };
 
   handleComplete = () => {
@@ -79,82 +96,114 @@ class FlashCardDeck extends Component {
     });
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    const total = this.state.knowList.length + this.state.dontKnowList.length;
-    if (
-      this.state.sessionComplete &&
-      !this.state.progressUpdated &&
-      total === this.props.lessonData.flashcards.length
-    ) {
-      this.props.updateQuizProgress({ score: this.state.knowList.length, total });
-      this.setState({ progressUpdated: true });
+  renderCard = (card, index) => {
+    if (!card) {
+      return (
+        <Text style={{ fontSize: 22, color: "gray", textAlign: "center" }}>
+          No more cards
+        </Text>
+      );
     }
-  }
+    return (
+      <FlashCard
+        card={card}
+        hideText={index !== 0 && this.state.flipInProgress}
+        {...(index === 0 && {
+          onFlipStart: () => this.setState({ flipInProgress: true }),
+          onFlipEnd: () => this.setState({ flipInProgress: false }),
+        })}
+      />
+    );
+  };
 
   render() {
     const { knowList, dontKnowList, sessionComplete } = this.state;
     const total = knowList.length + dontKnowList.length;
     const correctPercentage = total ? (knowList.length / total) * 100 : 0;
 
-    if (sessionComplete) {
+    // Render a local results view if the session is complete and there are unknown cards.
+    if (sessionComplete && dontKnowList.length > 0) {
       return (
-        <View style={{ padding: 24 }}>
-          {/* Top Section with Title & Progress */}
-          <View style={{ alignItems: "center", marginTop: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 16 }}>
-              Session Complete
-            </Text>
-            <View style={{ position: "relative", marginBottom: 16 }}>
-              <CircularProgress
-                value={correctPercentage}
-                radius={100}
-                inActiveStrokeOpacity={0.7}
-                inActiveStrokeColor="red"
-                activeStrokeWidth={40}
-                inActiveStrokeWidth={40}
-                progressValueStyle={{
-                  fontWeight: "bold",
-                  color: "#ccc",
-                }}
-              />
-              <View style={{ justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 24, fontWeight: "bold" }}>
-                  {knowList.length} / {total}
-                </Text>
-              </View>
-            </View>
+        <View
+          style={{
+            width: 300,
+            height: 500,
+            marginTop: -this.windowWidth * 0.35,
+            alignSelf: "center",
+            backgroundColor: "#fff",
+            borderRadius: 10,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+            elevation: 10,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "600",
+              marginBottom: 16,
+              color: COLORS.MAROON,
+            }}
+          >
+            Session Results
+          </Text>
+          <View
+            style={{
+              marginBottom: 16,
+              backgroundColor: "#fff",
+              width: this.windowWidth * 0.55,
+              height: this.windowWidth * 0.55,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress
+              value={correctPercentage}
+              radius={70}
+              inActiveStrokeOpacity={0.7}
+              inActiveStrokeColor={COLORS.MAROON}
+              activeStrokeWidth={40}
+              inActiveStrokeWidth={40}
+              progressValueStyle={{
+                fontWeight: "bold",
+                color: "#ccc",
+              }}
+            />
           </View>
-
-          {/* Bottom Section with Buttons */}
-          <View style={{ width: "100%", marginBottom: 16 }}>
-            {dontKnowList.length > 0 && (
-              <TouchableOpacity
-                onPress={this.reviseUnknown}
-                style={{
-                  width: "100%",
-                  paddingVertical: 12,
-                  borderRadius: 12,
-                  marginBottom: 16,
-                  alignItems: "center",
-                  backgroundColor: "red",
-                }}
-              >
-                <Text style={{ color: "#fff", fontSize: 18 }}>Revise Unknown</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              onPress={this.restartSession}
+          <TouchableOpacity
+            onPress={this.reviseUnknown}
+            style={{
+              width: this.windowWidth * 0.55,
+              paddingVertical: 12,
+              borderRadius: 12,
+              marginBottom: 16,
+              alignItems: "center",
+              backgroundColor: COLORS.MAROON_LIGHT,
+            }}
+          >
+            <Text
               style={{
-                width: "100%",
-                paddingVertical: 12,
-                borderRadius: 12,
-                alignItems: "center",
-                backgroundColor: "#007aff",
+                color: COLORS.MAROON,
+                fontSize: 18,
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 18 }}>Restart</Text>
-            </TouchableOpacity>
-          </View>
+              Revise Unknown
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={this.restartSession}
+            style={{
+              width: this.windowWidth * 0.55,
+              paddingVertical: 12,
+              borderRadius: 12,
+              alignItems: "center",
+              backgroundColor: COLORS.MAROON,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 18 }}>Restart All</Text>
+          </TouchableOpacity>
         </View>
       );
     }

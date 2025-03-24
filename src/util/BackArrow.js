@@ -22,7 +22,6 @@ class BackArrow extends Component {
     this.setState((prevState) => ({ isModalVisible: !prevState.isModalVisible }));
   };
 
-  // Render the Realtime AI button if AIModal prop is true
   renderRealtimeAIButton = () => {
     const { AIModal } = this.props;
     if (AIModal === true) {
@@ -35,7 +34,7 @@ class BackArrow extends Component {
             right: 10,
             top: 15,
             padding: 5,
-            backgroundColor: "#007AFF",
+            backgroundColor: "black",
             borderRadius: 5,
           }}
         >

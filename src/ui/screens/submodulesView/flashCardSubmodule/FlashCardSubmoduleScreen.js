@@ -108,6 +108,7 @@ export default class FlashCardSubmoduleScreen extends Component {
           <FlashCardDeck
             lessonData={parsedFlashCards}
             updateQuizProgress={this.updateQuizProgress}
+            navigation={this.props.navigation}
           />
         </View>
       </LinearGradient>

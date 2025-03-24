@@ -1,3 +1,4 @@
+import React, { Component } from "react";
 import {
   View,
   Text,
@@ -8,27 +9,30 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
-  PermissionsAndroid
+  PermissionsAndroid,
+  Modal,
+  Platform
 } from "react-native";
 
 import DocumentPicker from "react-native-document-picker";
 import CustomBottomBar from "../../../components/CustomBottomBar";
 import COLORS from "../../../constants/COLORS";
 import Icon from "react-native-vector-icons/Ionicons";
+import uploadPDF from "../../../api/uploadFile";
 import { SessionContext } from "../../../util/SessionContext";
 import auth from "@react-native-firebase/auth";
 import { getModulesByUser } from "../../../api/getModulesByUser";
 import { getSubmodulesByModuleId } from "../../../api/getSubmodulesByModuleId";
 import { getSubmoduleProgressByUser } from "../../../api/getSubmoduleProgressByUser";
 import { downloadAudioFile } from "../../../util/downloadAudioFile";
-import { launchCamera } from "react-native-image-picker";
-import ml from "@react-native-firebase/ml";
-import storage from "@react-native-firebase/storage";
-import firestore from "@react-native-firebase/firestore";
-import { Component } from "react";
-function getFilenameFromUri(uri) {
-  return uri.substring(uri.lastIndexOf('/') + 1);
-}
+import { launchCamera } from "react-native-image-picker"; // <-- Import camera picker
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import AntDesign from "react-native-vector-icons/AntDesign"
+import LottieView from "lottie-react-native";
+import AudioRecorderPlayer from "react-native-audio-recorder-player";
+import RNFS from 'react-native-fs';
+import uploadFile from "../../../api/uploadFile";
+
 export default class UploadManagementScreen extends Component {
   static contextType = SessionContext;
 
@@ -38,15 +42,19 @@ export default class UploadManagementScreen extends Component {
     this.windowWidth = windowDimensions.width;
     this.windowHeight = windowDimensions.height;
 
+    this.audioRecorderPlayer = new AudioRecorderPlayer();
+
     this.state = {
       files: [],
       isLoading: false,
       createCourse: false,
       successAnimation: new Animated.Value(0),
+      isRecordModalVisible: false,
+      isRecording: false,
+      recordSecs: 0,
+      recordTime: "00:00"
     };
   }
-
-  // ------------------ Data Fetching Methods ------------------
 
   fetchProgressForSubmodules = async (submodules, userId) => {
     const submodulesWithData = await Promise.all(
@@ -106,7 +114,7 @@ export default class UploadManagementScreen extends Component {
       this.context.setSession({
         token,
         userUid: user.uid,
-        username: user.email,
+        // username: user.email,
         modules: modulesWithSubmodules,
       });
     } catch (error) {
@@ -118,10 +126,8 @@ export default class UploadManagementScreen extends Component {
 
   handlePostUpload = async () => {
     await this.fetchUserModules(auth().currentUser);
-    this.props.navigation.replace("Modules");
+    this.props.navigation.replace('Modules');
   };
-
-  // ------------------ UI Animation ------------------
 
   showSuccessAnimation = () => {
     Animated.sequence([
@@ -139,39 +145,15 @@ export default class UploadManagementScreen extends Component {
     ]).start();
   };
 
-  // ------------------ File Selection ------------------
-
   selectFile = async () => {
     try {
       const res = await DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
       });
-      // Immediately process image files
-      res.forEach((file) => {
-        if (
-          (file.type && (file.type === "image/jpeg" || file.type === "image/png")) ||
-          file.uri.match(/\.(jpg|jpeg|png)$/)
-        ) {
-          this.uploadImageAndWaitForExtractedText(file)
-          .then((extractedText) => {
-            console.log("OCR result:", extractedText);
-            file.extractedText = extractedText;
-            this.setState((prevState) => ({
-              files: prevState.files.map((f) =>
-                f.uri === file.uri ? { ...f, extractedText } : f
-              )
-            }));
-          })
-          .catch((err) =>
-            console.error("Error processing OCR for selected file:", err)
-          );
-        }
-      });
       this.setState({ files: [...this.state.files, ...res] });
       this.showSuccessAnimation();
     } catch (err) {
       if (DocumentPicker.isCancel(err)) {
-        // User canceled the picker
       } else {
         console.error("File selection error:", err);
       }
@@ -183,8 +165,6 @@ export default class UploadManagementScreen extends Component {
       files: this.state.files.filter((file) => file.name !== fileName),
     });
   };
-
-  // ------------------ Camera ------------------
 
   takePhotoOrUploadImage = async () => {
     console.log("Open Camera & Take Photo pressed");
@@ -208,22 +188,9 @@ export default class UploadManagementScreen extends Component {
             name: fileName || "captured_photo.jpg",
             type: type || "image/jpeg",
           };
-          // Immediately trigger OCR for the captured image
-          this.uploadImageAndWaitForExtractedText(newFile)
-          .then((extractedText) => {
-            console.log("OCR result from camera:", extractedText);
-            newFile.extractedText = extractedText;
-            this.setState((prevState) => ({
-              files: [...prevState.files, newFile]
-            }));
-          })
-          .catch((err) => {
-            console.error("Error processing OCR for camera image:", err);
-            // Even if OCR fails, still add the file
-            this.setState((prevState) => ({
-              files: [...prevState.files, newFile]
-            }));
-          });
+          this.setState((prevState) => ({
+            files: [...prevState.files, newFile],
+          }));
           this.showSuccessAnimation();
         }
       }
@@ -243,6 +210,7 @@ export default class UploadManagementScreen extends Component {
         }
       );
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        // If permission is granted, proceed to open the camera.
         await this.takePhotoOrUploadImage();
       } else {
         Alert.alert("Permission Denied", "Camera permission is required to take photos.");
@@ -251,81 +219,239 @@ export default class UploadManagementScreen extends Component {
       console.warn(err);
     }
   };
-
-  // ------------------ Image Upload & OCR via Firebase Extension ------------------
-  /**
-   * Uploads an image file from the device to Firebase Storage and polls Firestore
-   * for the extracted text. Assumes the Cloud Vision extension writes to the
-   * "extractedText" collection using an ID that includes a timestamp and the original file name.
-   */
-
-
-  uploadImageAndWaitForExtractedText = async (file) => {
-    // 1. Determine a file name and storage path
-    // Use the 'uri' from the 'file' object
-    const fileName = getFilenameFromUri(file.uri);
-    const storageDestination = `images/${fileName}`;
-
-    // 2. Upload the file to Firebase Storage
-    const reference = storage().ref(storageDestination);
-
-    console.log(`Uploading file to: ${storageDestination}`);
-    await reference.putFile(file.uri);
-    console.log('Upload complete!');
-
-    // 3. Poll Firestore for the extracted text
-    const docRef = firestore().collection('extractedText').doc(fileName);
-
-    let extractedText = null;
-    const timeoutSeconds = 200;  // Adjust as needed
-    const pollInterval = 2000;   // in milliseconds
-    const startTime = Date.now();
-
-    console.log('Polling Firestore for extracted text...');
-    while (!extractedText && (Date.now() - startTime) < timeoutSeconds * 1000) {
-      const docSnap = await docRef.get();
-
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        // The extension might store text in 'extractedText' or 'text'
-        extractedText = data.extractedText || data.text || null;
-
-        if (extractedText) {
-          console.log('Extracted text found!');
-          return extractedText;
-        }
-      }
-
-      // Wait before polling again
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-    }
-
-    console.warn('Timeout reached; no extracted text found.');
-    return null;
-  };
-
-  // ------------------ Course Creation ------------------
-  // In this version, course creation is separate.
-  // The OCR for images is triggered immediately upon selection or capture.
   createCourse = async () => {
     const { files } = this.state;
     if (files.length === 0) {
       Alert.alert("No file selected", "Please select a file first!");
       return;
     }
+
     this.setState({ isLoading: true });
     try {
-      console.log("Files ready for course creation:", files);
+      const formData = new FormData();
+      formData.append("useruid", auth().currentUser.uid);
+
+      files.forEach(file => {
+        let mimeType = file.type;
+        let fileName = file.name;
+
+        if (!mimeType) {
+          if (file.uri.match(/\.(jpg|jpeg)$/)) {
+            mimeType = "image/jpeg";
+            fileName = fileName || "uploaded_photo.jpg";
+          } else if (file.uri.match(/\.png$/)) {
+            mimeType = "image/png";
+            fileName = fileName || "uploaded_photo.png";
+          } else {
+            mimeType = "application/pdf";
+            fileName = fileName || "uploaded_file.pdf";
+          }
+        }
+
+        formData.append("file", {
+          uri: file.uri,
+          type: mimeType,
+          name: fileName,
+        });
+      });
+
+      const data = await uploadFile(auth().currentUser.uid, files, this.context.session.submodulePreference);
+      console.log("Files uploaded successfully!", data);
       await this.handlePostUpload(auth().currentUser.uid);
     } catch (error) {
-      console.error("Error creating course:", error);
-      Alert.alert("Error", "An error occurred while creating the course.");
+      console.error("Upload Error:", error);
+      Alert.alert("Error", "An error occurred while uploading the files.");
     } finally {
       this.setState({ isLoading: false });
     }
   };
 
-  // ------------------ Render ------------------
+  requestAudioPermission = async () => {
+    if (Platform.OS === "android") {
+      try {
+        const permissions = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        ]);
+        if (
+          permissions["android.permission.RECORD_AUDIO"] === PermissionsAndroid.RESULTS.GRANTED
+        ) {
+          console.log("Audio permission granted");
+        } else {
+          Alert.alert("Permission Denied", "Microphone permission is required for recording.");
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    } else {
+      console.log("iOS: No runtime permission request required");
+    }
+  };
+
+  toggleRecordModal = () => {
+    this.setState(
+      (prevState) => ({
+        isRecordModalVisible: !prevState.isRecordModalVisible,
+      }),
+      () => {
+        if (this.state.isRecordModalVisible) {
+          this.requestAudioPermission();
+        } else if (!this.state.isRecordModalVisible && this.state.isRecording) {
+          this.controlSoundWave(); // Stop recording if modal closes while recording
+        }
+      }
+    );
+  };
+  formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const paddedMins = mins < 10 ? `0${mins}` : mins;
+    const paddedSecs = secs < 10 ? `0${secs}` : secs;
+    return `${paddedMins}:${paddedSecs}`;
+  };
+
+  controlSoundWave = async () => {
+    if (!this.state.isRecording) {
+      const path = Platform.select({
+        ios: `${RNFS.DocumentDirectoryPath}/recordedAudio.m4a`,
+        android: `${RNFS.CachesDirectoryPath}/recordedAudio.mp4`,
+      });
+      try {
+        const uri = await this.audioRecorderPlayer.startRecorder(path);
+        this.audioRecorderPlayer.addRecordBackListener((e) => {
+          this.setState({
+            recordSecs: e.currentPosition,
+            recordTime: this.formatTime(e.currentPosition / 1000),
+          });
+          return;
+        });
+        this.setState({ isRecording: true });
+      } catch (error) {
+        console.error("Error starting recorder:", error);
+      }
+    } else {
+      try {
+        // Stop recording and store the URI
+        const uri = await this.audioRecorderPlayer.stopRecorder();
+        this.audioRecorderPlayer.removeRecordBackListener();
+        this.setState({ isRecording: false, recordedAudioUri: uri });
+        console.log("Recording stopped, file saved at:", uri);
+      } catch (error) {
+        console.error("Error stopping recorder:", error);
+      }
+    }
+  };
+
+  doneRecording = async () => {
+    const { recordedAudioUri } = this.state;
+    if (recordedAudioUri) {
+      const newFile = {
+        uri: recordedAudioUri,
+        name: Platform.OS === "android" ? "recordedAudio.mp4" : "recordedAudio.m4a",
+        type: Platform.OS === "android" ? "audio/mp4" : "audio/m4a",
+        size: 0,
+      };
+      this.setState((prevState) => ({
+        files: [...prevState.files, newFile],
+        isRecordModalVisible: false,
+        recordedAudioUri: null,
+        recordSecs: 0,
+        recordTime: "00:00",
+      }));
+    } else {
+      this.setState({ isRecordModalVisible: false });
+    }
+  };
+
+
+  renderRecordSessionModal = () => {
+    return (
+      <Modal
+        visible={this.state.isRecordModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={this.toggleRecordModal}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          <View
+            style={{
+              width: this.windowWidth * 0.7,
+              height: this.windowWidth * 0.5,
+              backgroundColor: "white",
+              padding: 20,
+              borderRadius: 10,
+            }}
+          >
+            {/* Close Button */}
+            <View style={{ alignItems: "flex-end" }}>
+              <TouchableOpacity onPress={this.toggleRecordModal}>
+                <AntDesign name={"close"} size={24} />
+              </TouchableOpacity>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {/* Recording Time */}
+              <Text style={{ marginRight: 10, fontSize: 16 }}>
+                {this.state.recordTime}
+              </Text>
+              <LottieView
+                source={require("../../../assets/animations/soundwave.json")}
+                autoPlay={this.state.isRecording}
+                loop={this.state.isRecording}
+                style={{ width: 100, height: 100 }}
+                speed={this.state.isRecording ? 1 : 0}
+              />
+              <TouchableOpacity
+                onPress={this.controlSoundWave}
+                style={{ marginLeft: 10 }}
+              >
+                <FontAwesome name="microphone" size={30} />
+              </TouchableOpacity>
+            </View>
+            {/* Done Button */}
+            <View
+              style={{
+                alignItems: "center"
+              }}
+            >
+              <TouchableOpacity
+                onPress={this.doneRecording}
+                style={{
+                  paddingVertical: 10,
+                  backgroundColor: COLORS.MAROON,
+                  borderRadius: 10,
+                  width: this.windowWidth * 0.5
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 16,
+                    textAlign: "center"
+                  }}>
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   render() {
     const { isLoading, files, successAnimation } = this.state;
@@ -339,8 +465,43 @@ export default class UploadManagementScreen extends Component {
     }
 
     return (
-      <View style={{ flex: 1, backgroundColor: "white", alignItems: "center", justifyContent: "center" }}>
-        <StatusBar backgroundColor="transparent" textColor="black" translucent barStyle="dark-content" />
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "white",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <StatusBar
+          backgroundColor="transparent"
+          textColor="black"
+          translucent
+          barStyle="dark-content"
+        />
+        <View style={{
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 20,
+          width: this.windowWidth,
+          paddingTop: 50,
+          paddingBottom: 20,
+          backgroundColor: "#fff",
+          shadowColor: "#000",
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+          elevation: 3,
+        }}>
+          <Text
+            style={{
+              fontSize: 24,
+              fontWeight: "bold",
+              color: COLORS.MAROON
+            }}>
+            Upload Content
+          </Text>
+
+        </View>
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -349,9 +510,7 @@ export default class UploadManagementScreen extends Component {
             paddingTop: 20,
           }}
         >
-          <Text style={{ fontSize: 24, marginBottom: 20 }}>Upload File</Text>
           <View style={{ alignItems: "center", justifyContent: "center" }}>
-            {/* Select File Button */}
             <TouchableOpacity
               style={{
                 backgroundColor: "#f1f1f1",
@@ -391,7 +550,11 @@ export default class UploadManagementScreen extends Component {
                 opacity: successAnimation,
               }}
             >
-              <Icon name="checkmark-circle" size={this.windowWidth * 0.15} color="green" />
+              <Icon
+                name="checkmark-circle"
+                size={this.windowWidth * 0.15}
+                color="green"
+              />
             </Animated.View>
           </View>
           {/* Divider */}
@@ -404,7 +567,55 @@ export default class UploadManagementScreen extends Component {
             }}
           >
             <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
-            <Text style={{ marginHorizontal: 10, fontSize: 16, color: "#aaa" }}>or</Text>
+            <Text style={{ marginHorizontal: 10, fontSize: 16, color: "#aaa" }}>
+              or
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
+          </View>
+          <View>
+            <TouchableOpacity
+              onPress={this.toggleRecordModal}
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                backgroundColor: COLORS.MAROON_LIGHT,
+                borderRadius: 25,
+                width: this.windowWidth * 0.7,
+                height: this.windowWidth * 0.13,
+                justifyContent: "center",
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+
+              <Text
+                style={{
+                  color: COLORS.MAROON,
+                  fontSize: 16,
+                  marginRight: this.windowWidth * 0.05
+              }}>
+                Record Session
+              </Text>
+              <FontAwesome
+                name="microphone"
+                size={20}
+                color={COLORS.MAROON}
+              />
+
+            </TouchableOpacity>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginVertical: 10,
+              width: this.windowWidth * 0.7,
+            }}
+          >
+            <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
+            <Text style={{ marginHorizontal: 10, fontSize: 16, color: "#aaa" }}>
+              or
+            </Text>
             <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
           </View>
           <TouchableOpacity
@@ -425,8 +636,13 @@ export default class UploadManagementScreen extends Component {
               Open Camera & Take Photo
             </Text>
           </TouchableOpacity>
-          {/* Display Selected Files */}
-          <View style={{ marginBottom: 15, maxHeight: this.windowWidth * 0.9, backgroundColor: "#fff" }}>
+          <View
+            style={{
+              marginBottom: 15,
+              maxHeight: this.windowWidth * 0.9,
+              backgroundColor: "#fff",
+            }}
+          >
             <ScrollView style={{ maxHeight: this.windowWidth * 0.5 }}>
               {files.map((file, index) => (
                 <View
@@ -450,7 +666,10 @@ export default class UploadManagementScreen extends Component {
                   >
                     {file.name || "Unnamed"}
                   </Text>
-                  <TouchableOpacity onPress={() => this.deleteFile(file.name)} style={{ position: "absolute", right: 0 }}>
+                  <TouchableOpacity
+                    onPress={() => this.deleteFile(file.name)}
+                    style={{ position: "absolute", right: 0 }}
+                  >
                     <Icon name="close-circle" size={24} color="grey" />
                   </TouchableOpacity>
                 </View>
@@ -477,6 +696,7 @@ export default class UploadManagementScreen extends Component {
           <Text style={{ color: "white", fontSize: 16 }}>Create Course</Text>
         </TouchableOpacity>
         <CustomBottomBar navigation={this.props.navigation} activeTab="Upload" />
+        {this.renderRecordSessionModal()}
       </View>
     );
   }

@@ -15,8 +15,9 @@ import { firebase } from "@react-native-firebase/auth";
 import LearningStyleForm from "./src/ui/screens/learningStyleView/LearningStyleForm";
 import FlashCardSubmoduleScreen from "./src/ui/screens/submodulesView/flashCardSubmodule/FlashCardSubmoduleScreen";
 import MindMap from "./src/ui/screens/submodulesView/mindMapSubmodule/MindMapSubmoduleScreen";
-import { TypographyMetaballScreen } from "./src/components/animations/TypographyMetaballScreen";
 import QuizSubmoduleScreen from "./src/ui/screens/submodulesView/quizSubmodule/QuizSubmoduleScreen";
+import LearningStyleResults from "./src/ui/screens/learningStyleView/LearningStyleResults";
+import SubmoduleResultsScreen from "./src/ui/screens/submodulesView/SubmoduleResultsScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -35,7 +36,7 @@ export default class App extends Component {
     this.state = {
       session: {
         token: null,
-        username: null,
+        // username: null,
         modules: [],
       },
     };
@@ -52,14 +53,11 @@ export default class App extends Component {
         <SessionProvider value={{ session: this.state.session, setSession: this.setSession }}>
           <NavigationContainer>
             <Stack.Navigator initialRouteName={"SplashScreen"} screenOptions={{ headerShown: false }}>
-              {/* Stack Screens */}
-              {/*<Stack.Screen name="TypographyMetaball" component={TypographyMetaballScreen} />*/}
-              {/*<Stack.Screen name="MindMapSubmodule" component={MindMap}/>*/}
-
               <Stack.Screen name="SplashScreen" component={SplashScreen} />
               <Stack.Screen name="SignUp" component={SignUpManagementScreen} />
               <Stack.Screen name="Upload" component={UploadManagementScreen} />
               <Stack.Screen name="LearningStyleForm" component={LearningStyleForm} />
+              <Stack.Screen name="LearningStyleResults" component={LearningStyleResults} />
               <Stack.Screen name="Modules" component={ModulesManagementScreen} />
               <Stack.Screen name="Submodules" component={SubmodulesManagementScreen} />
               <Stack.Screen name="PodcastSubmodule" component={PodcastSubmoduleScreen} />
@@ -67,6 +65,7 @@ export default class App extends Component {
               <Stack.Screen name="MindMapSubmodule" component={MindMap}/>
               <Stack.Screen name="QuizSubmodule" component={QuizSubmoduleScreen} />
               <Stack.Screen name="Profile" component={ProfileManagementScreen} />
+              <Stack.Screen name="SubmoduleResultsScreen" component={SubmoduleResultsScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </SessionProvider>

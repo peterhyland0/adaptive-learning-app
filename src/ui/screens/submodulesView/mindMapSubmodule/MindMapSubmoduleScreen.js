@@ -10,11 +10,11 @@ import { SessionContext } from "../../../../util/SessionContext";
 
 // Chalk color palette (feel free to adjust these values)
 const chalkColors = [
-  "#264653", // dark blue
-  "#2A9D8F", // teal
-  "#F4A261", // warm orange
-  "#E76F51", // red-orange
-  "#F7C948", // yellow
+  "#264653",
+  "#2A9D8F",
+  "#F4A261",
+  "#E76F51",
+  "#F7C948",
 ];
 
 // Helper to pick a contrasting text color based on the fill

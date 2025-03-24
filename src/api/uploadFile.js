@@ -1,11 +1,12 @@
-// api/uploadFile.js
-const uploadFile = async (useruid, files) => {
+const uploadFile = async (userUid, files, submodulePreference) => {
   const formData = new FormData();
-  formData.append("useruid", useruid);
+  formData.append("useruid", userUid);
+  formData.append("submodulepreference", submodulePreference);
   files.forEach(file => {
+    console.log("file", file.type);
     formData.append("file", {
       uri: file.uri,
-      type: file.type || "application/pdf", // Adjust based on file type (PDF or image)
+      type: file.type || "application/pdf",
       name: file.name || "uploaded_file.pdf",
     });
   });

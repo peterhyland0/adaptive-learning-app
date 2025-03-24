@@ -15,24 +15,24 @@ import CircularProgress from "react-native-circular-progress-indicator";
 import "firebase/compat/storage";
 import { getSubmoduleProgressByUser } from "../../../../api/getSubmoduleProgressByUser";
 
-export default function SubmodulesList({ module, submodules, useruid }) {
+export default function SubmodulesList({ module, submodules, userUid }) {
   const navigation = useNavigation();
   const [updatedSubmodules, setUpdatedSubmodules] = useState(submodules);
   const windowWidth = Dimensions.get("window").width;
 
-  // Animated value to control the dragging
   const translateY = useRef(new Animated.Value(0)).current;
 
+  console.log("userUid", userUid)
   const getIconForSubmoduleType = (type) => {
     switch (type) {
       case "auditory":
         return (
-          <Ionicons name="musical-notes-outline" size={50} color={COLORS.MAROON} />
+          <Ionicons name="musical-notes-outline" size={50} color={COLORS.ORANGE} />
         );
       case "visual":
-        return <Ionicons name="eye-outline" size={50} color={COLORS.MAROON} />;
+        return <Ionicons name="eye-outline" size={50} color={COLORS.LIGHT_BLUE} />;
       case "kinaesthetic":
-        return <Ionicons name="walk-outline" size={50} color={COLORS.MAROON} />;
+        return <Ionicons name="walk-outline" size={50} color={COLORS.YELLOW} />;
       case "quiz":
         return (
           <FontAwesome name="pencil-square-o" size={50} color={COLORS.MAROON} />
@@ -44,7 +44,6 @@ export default function SubmodulesList({ module, submodules, useruid }) {
     }
   };
 
-  // Helper function to determine the color based on progress percentage
   const getProgressColor = (completionPercentage) => {
     if (completionPercentage <= 20) {
       return "red";
@@ -56,6 +55,7 @@ export default function SubmodulesList({ module, submodules, useruid }) {
   };
 
   const handleSubmodulePress = async (submodule, module) => {
+    // your submoduleRoutes mapping
     const submoduleRoutes = {
       "auditory:Podcast Session": "PodcastSubmodule",
       "kinaesthetic:Flash Cards": "FlashCardsSubmodule",
@@ -68,7 +68,6 @@ export default function SubmodulesList({ module, submodules, useruid }) {
     try {
       const key = `${submodule.type}:${submodule.name}`;
       const routeName = submoduleRoutes[key];
-      console.log("submodule 1", submodule);
       if (routeName) {
         navigation.navigate(routeName, { submodule, module });
       } else {
@@ -84,7 +83,7 @@ export default function SubmodulesList({ module, submodules, useruid }) {
     try {
       const newSubmodules = await Promise.all(
         submodules.map(async (submodule) => {
-          const progress = await getSubmoduleProgressByUser(useruid, submodule.id);
+          const progress = await getSubmoduleProgressByUser(userUid, submodule.id);
           return {
             ...submodule,
             progress: progress || submodule.progress, // keep existing progress if none found
