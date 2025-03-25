@@ -6,7 +6,7 @@ import {
   SafeAreaView,
   Dimensions,
   FlatList,
-  Alert,
+  Alert, StatusBar,
 } from "react-native";
 import BackArrow from "../../../util/BackArrow";
 import { SessionContext } from "../../../util/SessionContext";
@@ -61,7 +61,9 @@ export default class LearningStyleForm extends Component {
     ];
 
     const mappedAnswers = questions.map((question, index) => {
-      return { answer: question + " " + this.state.answers[index] };
+      // return { answer: question + " " + this.state.answers[index] };]
+      return { answer: this.state.answers[index] };
+
     });
 
     try {
@@ -84,7 +86,7 @@ export default class LearningStyleForm extends Component {
       const result = await response.text();
       this.context.setSession((prevSession) => ({
         ...prevSession,
-        myLearningStyle: result,
+        // myLearningStyle: result,
         user: {
           ...prevSession.user,
           myLearningStyle: result,
@@ -208,131 +210,119 @@ export default class LearningStyleForm extends Component {
     const progressPercentage = (answeredCount / totalQuestions) * 100;
 
     return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          // backgroundColor: COLORS.SPACE_GREY,
-          backgroundColor: COLORS.MAROON,
-
-          paddingHorizontal: this.windowWidth * 0.05,
-        }}
-      >
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.MAROON }}>
+        <StatusBar backgroundColor={COLORS.MAROON} barStyle="light-content" />
         <BackArrow title="Obtain Your Learning Style" color={"#fff"} />
-        {/* Progress Bar */}
-        <View
-          style={{
-            height: 10,
-            backgroundColor: "#bbb",
-            borderRadius: 5,
-            overflow: "hidden",
-            marginTop: this.windowWidth * 0.075,
-          }}
-        >
+
+        <View style={{ flex: 1, paddingHorizontal: this.windowWidth * 0.05 }}>
           <View
             style={{
-              height: "100%",
-              backgroundColor: "#fff",
-              width: `${progressPercentage}%`,
+              height: 10,
+              backgroundColor: "#bbb",
+              borderRadius: 5,
+              overflow: "hidden",
+              marginTop: this.windowWidth * 0.075,
             }}
-          />
-        </View>
-        <FlatList
-          data={questions}
-          keyExtractor={(_, index) => index.toString()}
-          style={{
-            flex: 1,
-            backgroundColor: COLORS.MAROON,
-            marginTop: this.windowWidth * 0.1,
-          }}
-          renderItem={({ item, index }) => {
-            const question = item;
-            const currentOptions = options[index];
-            return (
-              <View
+          >
+            <View
+              style={{
+                height: "100%",
+                backgroundColor: "#fff",
+                width: `${progressPercentage}%`,
+              }}
+            />
+          </View>
+
+          <FlatList
+            data={questions}
+            keyExtractor={(_, index) => index.toString()}
+            style={{
+              flex: 1,
+              backgroundColor: COLORS.MAROON,
+              marginTop: this.windowWidth * 0.1,
+            }}
+            renderItem={({ item, index }) => {
+              const currentOptions = options[index];
+              return (
+                <View
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: 8,
+                    padding: 15,
+                    marginBottom: 20,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color: "#333",
+                      fontWeight: "600",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {item}
+                  </Text>
+                  {currentOptions.map((option, optIndex) => {
+                    let buttonStyle = {
+                      padding: this.windowWidth * 0.03,
+                      marginBottom: this.windowWidth * 0.02,
+                      borderWidth: this.windowWidth * 0.005,
+                      borderColor: "#ccc",
+                      borderRadius: this.windowWidth * 0.02,
+                      backgroundColor: "#f9f9f9",
+                    };
+                    if (this.state.answers[index] === option) {
+                      buttonStyle = {
+                        ...buttonStyle,
+                        borderColor: COLORS.MAROON,
+                        backgroundColor: COLORS.MAROON + "33",
+                      };
+                    }
+                    return (
+                      <TouchableOpacity
+                        key={optIndex}
+                        onPress={() => this.handleSelect(index, option)}
+                        style={buttonStyle}
+                      >
+                        <Text style={{ fontSize: 14, color: "#333" }}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              );
+            }}
+            ListFooterComponent={() => (
+              <TouchableOpacity
+                onPress={this.handleNext}
                 style={{
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 8,
+                  backgroundColor: "#fff",
                   padding: 15,
-                  marginBottom: 20,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  marginTop: 10,
+                  marginBottom: 30,
                 }}
               >
                 <Text
                   style={{
+                    color: COLORS.MAROON,
+                    fontWeight: "bold",
                     fontSize: 16,
-                    color: "#333",
-                    fontWeight: "600",
-                    marginBottom: 10,
                   }}
                 >
-                  {question}
+                  Next
                 </Text>
-                {currentOptions.map((option, optIndex) => {
-                  // Apply quiz-like selection styling
-                  let buttonStyle = {
-                    padding: this.windowWidth * 0.03,
-                    marginBottom: this.windowWidth * 0.02,
-                    borderWidth: this.windowWidth * 0.005,
-                    borderColor: "#ccc",
-                    borderRadius: this.windowWidth * 0.02,
-                    backgroundColor: "#f9f9f9",
-                  };
-                  if (this.state.answers[index] === option) {
-                    buttonStyle = {
-                      ...buttonStyle,
-                      borderColor: COLORS.MAROON,
-                      backgroundColor: COLORS.MAROON + "33",
-                    };
-                  }
-                  return (
-                    <TouchableOpacity
-                      key={optIndex}
-                      onPress={() => this.handleSelect(index, option)}
-                      style={buttonStyle}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: "#333",
-                        }}
-                      >
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            );
-          }}
-          ListFooterComponent={() => (
-            <TouchableOpacity
-              onPress={this.handleNext}
-              style={{
-                // backgroundColor: COLORS.MAROON,
-                backgroundColor: "#fff",
-                padding: 15,
-                borderRadius: 8,
-                alignItems: "center",
-                marginTop: 10,
-                marginBottom: 30,
-              }}
-            >
-              <Text
-                style={{
-                  color: COLORS.MAROON,
-                  fontWeight: "bold",
-                  fontSize: 16,
-                }}
-              >
-                Next
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
+              </TouchableOpacity>
+            )}
+          />
+        </View>
       </SafeAreaView>
     );
   }

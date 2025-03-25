@@ -32,7 +32,7 @@ export default class PodcastSubmoduleScreen extends Component {
 
     let completionPercentage = (currentTime / duration) * 100;
     let progressStatus = "Not Started";
-    if (completionPercentage >= 95) {
+    if (completionPercentage >= 90) {
       completionPercentage = 100;
       progressStatus = "Completed";
     } else {
@@ -77,7 +77,7 @@ export default class PodcastSubmoduleScreen extends Component {
         [
           {
             id: submodule.id,
-            completionPercentage: Math.min((currentTime / duration) * 100, 100),
+            completionPercentage: completionPercentage,
             lastUpdated: now,
             completionDate: completionDate,
             lastTime: currentTime,

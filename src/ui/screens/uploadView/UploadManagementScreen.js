@@ -255,7 +255,7 @@ export default class UploadManagementScreen extends Component {
         });
       });
 
-      const data = await uploadFile(auth().currentUser.uid, files, this.context.session.submodulePreference);
+      const data = await uploadFile(auth().currentUser.uid, files, this.context.session.user.submodulePreference);
       console.log("Files uploaded successfully!", data);
       await this.handlePostUpload(auth().currentUser.uid);
     } catch (error) {

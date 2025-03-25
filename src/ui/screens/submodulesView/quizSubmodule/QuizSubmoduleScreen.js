@@ -125,7 +125,17 @@ class QuizSubmoduleScreen extends Component {
       }));
     } else {
       await this.updateQuizProgress();
-      this.setState({ quizFinished: true });
+      const completionPercentage = Math.round((this.state.score / this.questions.length) * 100);
+      // const completionPercentage = 100;
+
+      if (completionPercentage >= 100) {
+        this.props.navigation.navigate("SubmoduleResultsScreen", {
+          correctPercentage: completionPercentage,
+          learningStyle: "quiz", 
+        });
+      } else {
+        this.setState({ quizFinished: true });
+      }
     }
   };
 
@@ -170,7 +180,6 @@ class QuizSubmoduleScreen extends Component {
       );
     }
 
-    // Final screen after quiz completion
     if (quizFinished) {
       return (
         <View style={{ flex: 1, backgroundColor: Colors.SPACE_GREY }}>
@@ -179,18 +188,19 @@ class QuizSubmoduleScreen extends Component {
             backgroundColor="transparent"
             barStyle="light-content"
           />
-          <ScrollView
-            contentContainerStyle={{
-              paddingVertical: windowWidth * (20 / 375),
-              alignItems: "center",
-            }}
-          >
+
             <BackArrow
               title={submodule.name}
               color={Colors.BLACK}
               isModal
               module={module}
             />
+          <View
+            style={{
+              paddingVertical: windowWidth * (20 / 375),
+              alignItems: "center",
+            }}
+          >
             <Text
               style={{
                 fontSize: windowWidth * (24 / 375),
@@ -229,7 +239,7 @@ class QuizSubmoduleScreen extends Component {
                 Restart Quiz
               </Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
         </View>
       );
     }
@@ -244,12 +254,16 @@ class QuizSubmoduleScreen extends Component {
       borderColor: isAnswerCorrect ? "#28a745" : Colors.RED,
       alignItems: "center",
       backgroundColor: isAnswerCorrect
-        ? "rgba(40, 167, 69, 0.2)" // Green background with opacity if correct
-        : "rgba(255, 0, 0, 0.2)", // Red background with opacity if incorrect
+        ? "rgba(40, 167, 69, 0.2)"
+        : "rgba(255, 0, 0, 0.2)",
     };
 
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.BLACK_LIGHT }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: Colors.MAROON_LIGHT
+      }}>
         <StatusBar
           translucent
           backgroundColor="transparent"

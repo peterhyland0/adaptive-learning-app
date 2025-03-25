@@ -47,7 +47,7 @@ export default function SubmodulesList({ module, submodules, userUid }) {
   const getProgressColor = (completionPercentage) => {
     if (completionPercentage <= 20) {
       return "red";
-    } else if (completionPercentage > 20 && completionPercentage <= 80) {
+    } else if (completionPercentage > 20 && completionPercentage < 80) {
       return "orange";
     } else {
       return ;

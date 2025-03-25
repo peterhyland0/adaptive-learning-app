@@ -13,6 +13,7 @@ import { SessionContext } from "../../../util/SessionContext";
 import COLORS from "../../../constants/COLORS";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import CircularProgress from "react-native-circular-progress-indicator";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 export default class SubmoduleResultsScreen extends Component {
   static contextType = SessionContext;
@@ -25,7 +26,8 @@ export default class SubmoduleResultsScreen extends Component {
   }
 
   render() {
-    const {learningStyle} = this.props.route.params;
+    const {correctPercentage, learningStyle} = this.props.route.params;
+    console.log(this.props.route.params);
 
     const getLearningStyleInfo = (styleName) => {
       switch (styleName.toLowerCase()) {
@@ -35,6 +37,8 @@ export default class SubmoduleResultsScreen extends Component {
           return { iconName: "musical-notes-outline", textColor: COLORS.ORANGE, title: "Auditory" };
         case "kinesthetic":
           return { iconName: "walk-outline", textColor: COLORS.YELLOW, title: "Kinaesthetic" };
+        case "quiz":
+          return { iconName: "pencil-square-o", textColor: COLORS.MAROON, title: "Multiple Choice Quiz" };
         default:
           return { iconName: "help-circle-outline", textColor: COLORS.ORANGE, title: "" };
       }
@@ -87,33 +91,53 @@ export default class SubmoduleResultsScreen extends Component {
                 color: learningStyleInfo.textColor,
                 marginRight: 10,
                 fontWeight: "bold",
+                width: this.windowWidth * 0.6
               }}
             >
               {learningStyleInfo.title} Learning Complete
             </Text>
-            <Ionicons
-              name={learningStyleInfo.iconName}
-              color={learningStyleInfo.textColor}
-              size={50}
-            />
+            {learningStyle.toLowerCase() === "quiz" ? (
+              <FontAwesome name={learningStyleInfo.iconName} color={learningStyleInfo.textColor} size={50} />
+            ) : (
+              <Ionicons name={learningStyleInfo.iconName} color={learningStyleInfo.textColor} size={50} />
+            )}
           </View>
+          {learningStyle.toLowerCase() === "quiz" ? (
+            <View style={{ marginBottom: 20 }}>
+              <CircularProgress
+                value={correctPercentage}
+                progressValueColor={"#4be057"}
+                radius={100}
+                inActiveStrokeOpacity={0.7}
+                inActiveStrokeColor={COLORS.MAROON}
+                activeStrokeColor={"#4be057"}
+                activeStrokeWidth={40}
+                inActiveStrokeWidth={40}
+                progressValueStyle={{
+                  fontWeight: "bold",
+                  color: "#ccc",
+                }}
+              />
+            </View>
+          ) : (
+            <View style={{ marginBottom: 20 }}>
+              <CircularProgress
+                value={correctPercentage}
+                progressValueColor={learningStyleInfo.textColor}
+                radius={100}
+                inActiveStrokeOpacity={0.7}
+                inActiveStrokeColor={COLORS.MAROON}
+                activeStrokeColor={learningStyleInfo.textColor}
+                activeStrokeWidth={40}
+                inActiveStrokeWidth={40}
+                progressValueStyle={{
+                  fontWeight: "bold",
+                  color: "#ccc",
+                }}
+              />
+            </View>
+          )}
 
-          <View style={{ marginBottom: 20 }}>
-            <CircularProgress
-              value={100}
-              progressValueColor={learningStyleInfo.textColor}
-              radius={100}
-              inActiveStrokeOpacity={0.7}
-              inActiveStrokeColor={COLORS.MAROON}
-              activeStrokeColor={learningStyleInfo.textColor}
-              activeStrokeWidth={40}
-              inActiveStrokeWidth={40}
-              progressValueStyle={{
-                fontWeight: "bold",
-                color: "#ccc",
-              }}
-            />
-          </View>
 
           <Text
             style={{

@@ -94,12 +94,14 @@ export default class ProfileManagementScreen extends Component {
 
 
   onUserDeleted = (deletedUserUid) => {
-    this.setState((prevState) => ({
-      myStudents: prevState.myStudents.filter(
+    this.context.setSession((prevSession) => ({
+      ...prevSession,
+      myStudents: prevSession.myStudents.filter(
         (student) => student.uid !== deletedUserUid
       ),
     }));
   };
+
 
   onUserAdded = () => {
     this.fetchStudents();

@@ -55,7 +55,10 @@ export default class LearningStyleResultsScreen extends Component {
     // Update session with selected preferences
     this.context.setSession((prevSession) => ({
       ...prevSession,
-      submodulePreference: selectedModules,
+      user: {
+        ...prevSession.user,
+        submodulePreference: selectedModules,
+      },
     }));
     // Update preferences in the backend then navigate
     updateSubmodulePreferences(userUid, selectedModules)

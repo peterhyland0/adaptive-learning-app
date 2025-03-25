@@ -138,9 +138,6 @@ function transformLabels(data) {
   }
 }
 
-// --------------------------------------------------------------------------
-// GraphDiagram Component with Progress Update
-// --------------------------------------------------------------------------
 class GraphDiagram extends Component {
   static contextType = SessionContext;
 
@@ -169,9 +166,14 @@ class GraphDiagram extends Component {
     this.nodes = nodes;
     this.edges = edges;
 
-    // Track the elapsed viewing time (in seconds) for progress updates.
+    const initialElapsedTime =
+      submodule.progress && submodule.progress.lastTime
+        ? submodule.progress.lastTime
+        : 0;
     this.state = {
-      elapsedTime: 0,
+      elapsedTime: initialElapsedTime,
+      showModal: false,
+      hasNavigated: false,
     };
   }
 
