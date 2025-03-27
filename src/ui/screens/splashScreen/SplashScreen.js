@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Alert, StatusBar } from 'react-native';
+import {View, Text, ActivityIndicator, StyleSheet, Alert, StatusBar, Dimensions} from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { SessionContext } from "../../../util/SessionContext";
 import { getModulesByUser } from "../../../api/getModulesByUser";
@@ -8,15 +8,22 @@ import { getSubmoduleProgressByUser } from "../../../api/getSubmoduleProgressByU
 import { downloadAudioFile } from "../../../util/downloadAudioFile";
 import COLORS from "../../../constants/COLORS";
 import {getUserDocument} from "../../../api/getUserDocument";
+import LottieView from "lottie-react-native";
+import AnimatedLoading from "../../../components/animations/AnimatedLoading";
 
 export default class SplashScreen extends Component {
   static contextType = SessionContext;
 
   constructor(props) {
+
     super(props);
     this.state = {
       loading: true,
     };
+    const windowDimensions = Dimensions.get("window");
+    this.windowWidth = windowDimensions.width;
+    this.windowHeight = windowDimensions.height;
+
   }
 
   componentDidMount() {
@@ -100,6 +107,7 @@ export default class SplashScreen extends Component {
       const userDoc = await getUserDocument(user.uid);
 
       const modules = await getModulesByUser(user.uid);
+      console.log("user doc", userDoc)
 
       const modulesWithSubmodules = await this.fetchSubmodulesForModules(modules, user.uid);
       this.context.setSession({
@@ -108,6 +116,7 @@ export default class SplashScreen extends Component {
         modules: modulesWithSubmodules,
         user: userDoc,
       });
+      console.log("this.context", this.context);
 
       this.props.navigation.replace('Upload');
     } catch (error) {
@@ -133,31 +142,40 @@ export default class SplashScreen extends Component {
 
     if (loading) {
       return (
-        <View style={styles.loadingContainer}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: COLORS.MAROON_LIGHT
+          }}>
           <StatusBar
             backgroundColor="transparent"
             translucent
             barStyle="dark-content"
           />
-          <ActivityIndicator size="large" color={COLORS.MAROON} />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <AnimatedLoading
+            sentences={[
+              "Welcome to the Adaptive Learning App!",
+              "We are loading your data...",
+              "Almost done!"
+            ]}
+            size={1.5}
+            fontSize={20}
+            animationMarginTop={0}
+            textBottom={100}
+            backgroundColor={COLORS.MAROON_LIGHT}
+            textColor={COLORS.MAROON}
+            animationSource={require("../../../assets/animations/loading-circle-fall.json")}
+            fadeDuration={800}
+            displayDuration={500}
+            cycle={false}
+            speed={0.5}
+          />
         </View>
       );
     }
-
     return null;
   }
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: COLORS.MAROON,
-  },
-});

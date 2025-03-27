@@ -25,13 +25,14 @@ import { getModulesByUser } from "../../../api/getModulesByUser";
 import { getSubmodulesByModuleId } from "../../../api/getSubmodulesByModuleId";
 import { getSubmoduleProgressByUser } from "../../../api/getSubmoduleProgressByUser";
 import { downloadAudioFile } from "../../../util/downloadAudioFile";
-import { launchCamera } from "react-native-image-picker"; // <-- Import camera picker
+import {launchCamera, launchImageLibrary} from "react-native-image-picker"; // <-- Import camera picker
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import AntDesign from "react-native-vector-icons/AntDesign"
 import LottieView from "lottie-react-native";
 import AudioRecorderPlayer from "react-native-audio-recorder-player";
 import RNFS from 'react-native-fs';
 import uploadFile from "../../../api/uploadFile";
+import AnimatedLoading from "../../../components/animations/AnimatedLoading";
 
 export default class UploadManagementScreen extends Component {
   static contextType = SessionContext;
@@ -96,10 +97,10 @@ export default class UploadManagementScreen extends Component {
             submodules,
             userId
           );
-          return { ...module, submodules: submodulesWithProgressAndPodcasts };
+          return {...module, submodules: submodulesWithProgressAndPodcasts};
         } catch (error) {
           console.error(`Error fetching submodules for module ${module.id}:`, error);
-          return { ...module, submodules: [] };
+          return {...module, submodules: []};
         }
       })
     );
@@ -111,16 +112,22 @@ export default class UploadManagementScreen extends Component {
       const token = await user.getIdToken();
       const modules = await getModulesByUser(user.uid);
       const modulesWithSubmodules = await this.fetchSubmodulesForModules(modules, user.uid);
-      this.context.setSession({
-        token,
-        userUid: user.uid,
-        // username: user.email,
-        modules: modulesWithSubmodules,
-      });
+      this.context.setSession((prevSession) => ({
+          ...prevSession,
+          token,
+          userUid: user.uid,
+          modules: modulesWithSubmodules,
+        }
+      ));
+      // this.context.setSession({
+      //   token,
+      //   userUid: user.uid,
+      //   modules: modulesWithSubmodules,
+      // });
     } catch (error) {
       console.error("Error fetching modules:", error);
       Alert.alert("Error", "Failed to fetch user modules. Please try again later.");
-      this.setState({ isLoading: false });
+      this.setState({isLoading: false});
     }
   };
 
@@ -150,7 +157,7 @@ export default class UploadManagementScreen extends Component {
       const res = await DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
       });
-      this.setState({ files: [...this.state.files, ...res] });
+      this.setState({files: [...this.state.files, ...res]});
       this.showSuccessAnimation();
     } catch (err) {
       if (DocumentPicker.isCancel(err)) {
@@ -182,7 +189,7 @@ export default class UploadManagementScreen extends Component {
       } else {
         const asset = response.assets && response.assets[0];
         if (asset) {
-          const { uri, fileName, type } = asset;
+          const {uri, fileName, type} = asset;
           const newFile = {
             uri,
             name: fileName || "captured_photo.jpg",
@@ -220,13 +227,13 @@ export default class UploadManagementScreen extends Component {
     }
   };
   createCourse = async () => {
-    const { files } = this.state;
+    const {files} = this.state;
     if (files.length === 0) {
       Alert.alert("No file selected", "Please select a file first!");
       return;
     }
 
-    this.setState({ isLoading: true });
+    this.setState({isLoading: true});
     try {
       const formData = new FormData();
       formData.append("useruid", auth().currentUser.uid);
@@ -254,15 +261,15 @@ export default class UploadManagementScreen extends Component {
           name: fileName,
         });
       });
-
-      const data = await uploadFile(auth().currentUser.uid, files, this.context.session.user.submodulePreference);
+      console.log("user: ", this.context.session)
+      const data = await uploadFile(auth().currentUser.uid, files, this.context.session.user.submodulePreferences);
       console.log("Files uploaded successfully!", data);
       await this.handlePostUpload(auth().currentUser.uid);
     } catch (error) {
       console.error("Upload Error:", error);
       Alert.alert("Error", "An error occurred while uploading the files.");
     } finally {
-      this.setState({ isLoading: false });
+      this.setState({isLoading: false});
     }
   };
 
@@ -273,6 +280,7 @@ export default class UploadManagementScreen extends Component {
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
           PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
           PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+
         ]);
         if (
           permissions["android.permission.RECORD_AUDIO"] === PermissionsAndroid.RESULTS.GRANTED
@@ -326,7 +334,7 @@ export default class UploadManagementScreen extends Component {
           });
           return;
         });
-        this.setState({ isRecording: true });
+        this.setState({isRecording: true});
       } catch (error) {
         console.error("Error starting recorder:", error);
       }
@@ -335,7 +343,7 @@ export default class UploadManagementScreen extends Component {
         // Stop recording and store the URI
         const uri = await this.audioRecorderPlayer.stopRecorder();
         this.audioRecorderPlayer.removeRecordBackListener();
-        this.setState({ isRecording: false, recordedAudioUri: uri });
+        this.setState({isRecording: false, recordedAudioUri: uri});
         console.log("Recording stopped, file saved at:", uri);
       } catch (error) {
         console.error("Error stopping recorder:", error);
@@ -344,7 +352,7 @@ export default class UploadManagementScreen extends Component {
   };
 
   doneRecording = async () => {
-    const { recordedAudioUri } = this.state;
+    const {recordedAudioUri} = this.state;
     if (recordedAudioUri) {
       const newFile = {
         uri: recordedAudioUri,
@@ -360,11 +368,110 @@ export default class UploadManagementScreen extends Component {
         recordTime: "00:00",
       }));
     } else {
-      this.setState({ isRecordModalVisible: false });
+      this.setState({isRecordModalVisible: false});
+    }
+  };
+  getSentences = () => {
+    const selectedPreferences = this.context.session.user.submodulePreferences
+    const sentences = ["Extracting Text from Document"];
+    if (selectedPreferences.includes("Auditory")) {
+      sentences.push("Creating Auditory Submodule");
+      sentences.push("Retrieving Podcast Conversation from LLM");
+      sentences.push("Individually fetching speech to text of sentences");
+      sentences.push("Creating Audio File");
+      sentences.push("Retrieving Audio File Transcript");
+    }
+    if (selectedPreferences.includes("Visual")) {
+      sentences.push("Creating Visual Submodule");
+      sentences.push("Retrieving Tree Layout from LLM");
+      sentences.push("Creating Mind Map")
+    }
+    if (selectedPreferences.includes("Kinesthetic")) {
+      sentences.push("Creating Kinesthetic Submodule");
+      sentences.push("Retrieving Question and Answers from LLM");
+      sentences.push("Creating Interactive Flash Cards");
+    }
+    sentences.push("Creating Multiple Choice Quiz");
+    sentences.push("Creating Module");
+    sentences.push("Almost done!");
+    return sentences;
+  };
+
+  // ... Inside your class ...
+  requestGalleryPermissionAndLaunch = async () => {
+    if (Platform.OS === "android") {
+      try {
+        // For Android 13 (API 33) and above, use READ_MEDIA_IMAGES
+        // For older versions, use READ_EXTERNAL_STORAGE
+        const permission = Platform.Version >= 33
+          ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+
+        const granted = await PermissionsAndroid.request(
+          permission,
+          {
+            title: "Gallery Permission",
+            message: "This app needs access to your gallery to upload photos.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
+
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("Gallery permission granted");
+          await this.pickImageFromGallery();
+        } else {
+          Alert.alert(
+            "Permission Denied",
+            "Gallery access is required to upload photos. Please enable it in Settings."
+          );
+        }
+      } catch (err) {
+        console.warn("Gallery permission request error:", err);
+        Alert.alert("Error", "Failed to request gallery permission. Please try again.");
+      }
+    } else {
+      // iOS doesn't need runtime permission for gallery access
+      await this.pickImageFromGallery();
     }
   };
 
+  pickImageFromGallery = async () => {
+    console.log("Opening Photo Gallery");
+    const options = {
+      mediaType: "photo",
+      quality: 0.8,
+      includeBase64: false,
+    };
 
+    try {
+      const response = await launchImageLibrary(options);
+
+      if (response.didCancel) {
+        console.log("User cancelled gallery picker");
+      } else if (response.errorCode) {
+        console.error("Gallery error:", response.errorMessage);
+      } else {
+        const asset = response.assets && response.assets[0];
+        if (asset) {
+          const {uri, fileName, type} = asset;
+          const newFile = {
+            uri,
+            name: fileName || "gallery_photo.jpg",
+            type: type || "image/jpeg",
+          };
+          this.setState((prevState) => ({
+            files: [...prevState.files, newFile],
+          }));
+          this.showSuccessAnimation();
+        }
+      }
+    } catch (error) {
+      console.error("Error picking image from gallery:", error);
+      Alert.alert("Error", "Failed to access gallery. Please try again.");
+    }
+  };
   renderRecordSessionModal = () => {
     return (
       <Modal
@@ -390,10 +497,9 @@ export default class UploadManagementScreen extends Component {
               borderRadius: 10,
             }}
           >
-            {/* Close Button */}
-            <View style={{ alignItems: "flex-end" }}>
+            <View style={{alignItems: "flex-end"}}>
               <TouchableOpacity onPress={this.toggleRecordModal}>
-                <AntDesign name={"close"} size={24} />
+                <AntDesign name={"close"} size={24}/>
               </TouchableOpacity>
             </View>
             <View
@@ -404,24 +510,23 @@ export default class UploadManagementScreen extends Component {
               }}
             >
               {/* Recording Time */}
-              <Text style={{ marginRight: 10, fontSize: 16 }}>
+              <Text style={{marginRight: 10, fontSize: 16}}>
                 {this.state.recordTime}
               </Text>
               <LottieView
                 source={require("../../../assets/animations/soundwave.json")}
                 autoPlay={this.state.isRecording}
                 loop={this.state.isRecording}
-                style={{ width: 100, height: 100 }}
+                style={{width: 100, height: 100}}
                 speed={this.state.isRecording ? 1 : 0}
               />
               <TouchableOpacity
                 onPress={this.controlSoundWave}
-                style={{ marginLeft: 10 }}
+                style={{marginLeft: 10}}
               >
-                <FontAwesome name="microphone" size={30} />
+                <FontAwesome name="microphone" size={30}/>
               </TouchableOpacity>
             </View>
-            {/* Done Button */}
             <View
               style={{
                 alignItems: "center"
@@ -454,12 +559,24 @@ export default class UploadManagementScreen extends Component {
   };
 
   render() {
-    const { isLoading, files, successAnimation } = this.state;
+    const {isLoading, files, successAnimation} = this.state;
     if (isLoading) {
       return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={COLORS.MAROON} />
-          <Text>Loading...</Text>
+        <View style={{flex: 1}}>
+          <AnimatedLoading
+            sentences={this.getSentences()}
+            size={0.5}
+            fontSize={20}
+            animationMarginTop={0}
+            textBottom={-30}
+            backgroundColor={COLORS.MAROON_LIGHT}
+            textColor={COLORS.MAROON}
+            animationSource={require("../../../assets/animations/loading-circle-vak.json")}
+            fadeDuration={800}
+            displayDuration={10000}
+            cycle={false}
+            speed={0.5}
+          />
         </View>
       );
     }
@@ -510,7 +627,8 @@ export default class UploadManagementScreen extends Component {
             paddingTop: 20,
           }}
         >
-          <View style={{ alignItems: "center", justifyContent: "center" }}>
+          {/* Existing Select File Button */}
+          <View style={{alignItems: "center", justifyContent: "center"}}>
             <TouchableOpacity
               style={{
                 backgroundColor: "#f1f1f1",
@@ -527,10 +645,9 @@ export default class UploadManagementScreen extends Component {
               }}
               onPress={this.selectFile}
             >
-              <Icon name="image-outline" size={24} color="#aaa" />
-              <Text style={{ color: "#aaa", fontSize: 16 }}>Select File</Text>
+              <Icon name="image-outline" size={24} color="#aaa"/>
+              <Text style={{color: "#aaa", fontSize: 16}}>Select File</Text>
             </TouchableOpacity>
-            {/* Success Animation */}
             <Animated.View
               style={{
                 position: "absolute",
@@ -543,9 +660,9 @@ export default class UploadManagementScreen extends Component {
                 justifyContent: "center",
                 backgroundColor: "white",
                 transform: [
-                  { translateX: -this.windowWidth * 0.1 },
-                  { translateY: -this.windowWidth * 0.1 },
-                  { scale: successAnimation },
+                  {translateX: -this.windowWidth * 0.1},
+                  {translateY: -this.windowWidth * 0.1},
+                  {scale: successAnimation},
                 ],
                 opacity: successAnimation,
               }}
@@ -557,6 +674,7 @@ export default class UploadManagementScreen extends Component {
               />
             </Animated.View>
           </View>
+
           {/* Divider */}
           <View
             style={{
@@ -566,12 +684,14 @@ export default class UploadManagementScreen extends Component {
               width: this.windowWidth * 0.7,
             }}
           >
-            <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
-            <Text style={{ marginHorizontal: 10, fontSize: 16, color: "#aaa" }}>
+            <View style={{flex: 1, height: 1, backgroundColor: "#aaa"}}/>
+            <Text style={{marginHorizontal: 10, fontSize: 16, color: "#aaa"}}>
               or
             </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
+            <View style={{flex: 1, height: 1, backgroundColor: "#aaa"}}/>
           </View>
+
+          {/* Record Session Button */}
           <View>
             <TouchableOpacity
               onPress={this.toggleRecordModal}
@@ -587,23 +707,20 @@ export default class UploadManagementScreen extends Component {
                 alignItems: "center",
               }}
             >
-
               <Text
                 style={{
                   color: COLORS.MAROON,
                   fontSize: 16,
-                  marginRight: this.windowWidth * 0.05
-              }}>
+                  marginRight: this.windowWidth * 0.05,
+                }}
+              >
                 Record Session
               </Text>
-              <FontAwesome
-                name="microphone"
-                size={20}
-                color={COLORS.MAROON}
-              />
-
+              <FontAwesome name="microphone" size={20} color={COLORS.MAROON}/>
             </TouchableOpacity>
           </View>
+
+          {/* Divider */}
           <View
             style={{
               flexDirection: "row",
@@ -612,30 +729,78 @@ export default class UploadManagementScreen extends Component {
               width: this.windowWidth * 0.7,
             }}
           >
-            <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
-            <Text style={{ marginHorizontal: 10, fontSize: 16, color: "#aaa" }}>
+            <View style={{flex: 1, height: 1, backgroundColor: "#aaa"}}/>
+            <Text style={{marginHorizontal: 10, fontSize: 16, color: "#aaa"}}>
               or
             </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#aaa" }} />
+            <View style={{flex: 1, height: 1, backgroundColor: "#aaa"}}/>
           </View>
-          <TouchableOpacity
+          <View
             style={{
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              backgroundColor: COLORS.MAROON_LIGHT,
-              borderRadius: 25,
-              marginBottom: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
               width: this.windowWidth * 0.7,
-              height: this.windowWidth * 0.13,
-              justifyContent: "center",
-              alignItems: "center",
             }}
-            onPress={this.requestCameraPermissionAndLaunch}
           >
-            <Text style={{ color: COLORS.MAROON, fontSize: 16 }}>
-              Open Camera & Take Photo
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                backgroundColor: COLORS.MAROON_LIGHT,
+                borderRadius: 25,
+                marginBottom: 20,
+                width: this.windowWidth * 0.325,
+                height: this.windowWidth * 0.13,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              onPress={this.requestCameraPermissionAndLaunch}
+            >
+              <Text style={{color: COLORS.MAROON, fontSize: 16}}>
+                Take Photo
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 10,
+                backgroundColor: COLORS.MAROON_LIGHT,
+                borderRadius: 25,
+                marginBottom: 20,
+                width: this.windowWidth * 0.325,
+                height: this.windowWidth * 0.13,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              onPress={this.requestGalleryPermissionAndLaunch}
+            >
+              <Text style={{color: COLORS.MAROON, fontSize: 16}}>
+                Photo Gallery
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+
+          {/* Divider */}
+          {/*<View*/}
+          {/*  style={{*/}
+          {/*    flexDirection: "row",*/}
+          {/*    alignItems: "center",*/}
+          {/*    marginVertical: 10,*/}
+          {/*    width: this.windowWidth * 0.7,*/}
+          {/*  }}*/}
+          {/*>*/}
+            {/*<View style={{flex: 1, height: 1, backgroundColor: "#aaa"}}/>*/}
+            {/*<Text style={{marginHorizontal: 10, fontSize: 16, color: "#aaa"}}>*/}
+            {/*  or*/}
+            {/*</Text>*/}
+            {/*<View style={{flex: 1, height: 1, backgroundColor: "#aaa"}}/>*/}
+          {/*</View>*/}
+
+          {/* New Gallery Button */}
+
+
+          {/* File List */}
           <View
             style={{
               marginBottom: 15,
@@ -643,15 +808,20 @@ export default class UploadManagementScreen extends Component {
               backgroundColor: "#fff",
             }}
           >
-            <ScrollView style={{ maxHeight: this.windowWidth * 0.5 }}>
+            <ScrollView style={{maxHeight: this.windowWidth * 0.5}}>
               {files.map((file, index) => (
                 <View
                   key={index}
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    marginBottom: 10,
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    backgroundColor: COLORS.SPACE_GREY,
+                    borderRadius: 25,
+                    marginBottom: 20,
                     width: this.windowWidth * 0.7,
+                    height: this.windowWidth * 0.13,
                   }}
                 >
                   <Text
@@ -668,15 +838,16 @@ export default class UploadManagementScreen extends Component {
                   </Text>
                   <TouchableOpacity
                     onPress={() => this.deleteFile(file.name)}
-                    style={{ position: "absolute", right: 0 }}
+                    style={{position: "absolute", right: 10}}
                   >
-                    <Icon name="close-circle" size={24} color="grey" />
+                    <Icon name="close-circle" size={24} color="grey"/>
                   </TouchableOpacity>
                 </View>
               ))}
             </ScrollView>
           </View>
         </ScrollView>
+
         {/* Upload File Button */}
         <TouchableOpacity
           style={{
@@ -693,9 +864,9 @@ export default class UploadManagementScreen extends Component {
           }}
           onPress={this.createCourse}
         >
-          <Text style={{ color: "white", fontSize: 16 }}>Create Course</Text>
+          <Text style={{color: "white", fontSize: 16}}>Create Course</Text>
         </TouchableOpacity>
-        <CustomBottomBar navigation={this.props.navigation} activeTab="Upload" />
+        <CustomBottomBar navigation={this.props.navigation} activeTab="Upload"/>
         {this.renderRecordSessionModal()}
       </View>
     );

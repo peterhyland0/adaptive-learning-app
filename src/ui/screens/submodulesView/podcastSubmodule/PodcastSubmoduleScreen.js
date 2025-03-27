@@ -32,7 +32,7 @@ export default class PodcastSubmoduleScreen extends Component {
 
     let completionPercentage = (currentTime / duration) * 100;
     let progressStatus = "Not Started";
-    if (completionPercentage >= 90) {
+    if (completionPercentage === 100) {
       completionPercentage = 100;
       progressStatus = "Completed";
     } else {
@@ -92,22 +92,17 @@ export default class PodcastSubmoduleScreen extends Component {
       console.error("Firestore update failed:", err);
     }
 
-    // When the podcast is finished, show the modal (if not already shown)
     if (completionPercentage === 100 && !this.state.hasNavigated) {
       this.setState({ hasNavigated: true, showModal: true });
     }
   };
 
   handleRestart = () => {
-    // Reset progress and hide the modal so the user can restart the podcast
     this.setState({ currentProgress: 0, hasNavigated: false, showModal: false });
-    // Optionally: trigger a restart action on your AudioPlayer component if needed.
   };
 
   handleSeeResults = () => {
-    // Hide the modal then navigate to the results screen.
     this.setState({ showModal: false }, () => {
-      // For a podcast, we assume the learning style is "auditory"
       this.props.navigation.navigate("SubmoduleResultsScreen", {
         correctPercentage: 100,
         learningStyle: "auditory",

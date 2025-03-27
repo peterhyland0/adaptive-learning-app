@@ -1,63 +1,38 @@
-import React, { useEffect, useRef } from "react";
-import { Animated, Text, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import { Text, Animated } from "react-native";
 
-export default function WordFade({ text, onComplete, width }) {
-  const opacity = useRef(new Animated.Value(0)).current;    // Start invisible
-  const translateX = useRef(new Animated.Value(-50)).current; // Start left off-screen
+const WordFade = ({ text, width, isActive }) => {
+  const fadeAnim = new Animated.Value(0);
 
   useEffect(() => {
-    // 1. Animate in (slide + fade)
-    Animated.parallel([
-      Animated.timing(opacity, {
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 500 + text.length * 50, // Longer words fade slower
         useNativeDriver: true,
       }),
-      Animated.timing(translateX, {
+      Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 400,
+        duration: 500,
+        delay: 1000, // Stay visible briefly
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
-
-  // 2. Animate out (fade) when onComplete is triggered
-  // (the parent can call a method or set a prop to fade out)
-  // For a timed auto fade, see below.
-
-  const fadeOut = () => {
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      onComplete?.(); // Let the parent remove it
-    });
-  };
+  }, [text]);
 
   return (
-    <Animated.View
-      style={[
-        styles.wordContainer,
-        {
-          opacity: opacity,
-          transform: [{ translateX: translateX }],
-        },
-      ]}
+    <Animated.Text
+      style={{
+        opacity: fadeAnim,
+        marginRight: 5,
+        fontSize: 16,
+        color: isActive ? "#FFD700" : "#fff", // Gold for active word
+        fontWeight: isActive ? "bold" : "normal",
+      }}
     >
-      <Text style={styles.word}>{text}</Text>
-    </Animated.View>
+      {text}
+    </Animated.Text>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  wordContainer: {
-    // Spacing as needed
-    width: this.width,
-    marginRight: 6,
-  },
-  word: {
-    color: "#fff",
-    fontSize: 18,
-  },
-});
+export default WordFade;

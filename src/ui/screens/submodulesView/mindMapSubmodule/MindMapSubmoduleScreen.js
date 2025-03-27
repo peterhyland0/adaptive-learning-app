@@ -8,16 +8,8 @@ import BackArrow from "../../../../util/BackArrow";
 import { updateUserProgress } from "../../../../api/updateUserProgress";
 import { SessionContext } from "../../../../util/SessionContext";
 
-// Chalk color palette (feel free to adjust these values)
-const chalkColors = [
-  "#264653",
-  "#2A9D8F",
-  "#F4A261",
-  "#E76F51",
-  "#F7C948",
-];
+const chalkColors = ["#264653", "#2A9D8F", "#F4A261", "#E76F51", "#F7C948"];
 
-// Helper to pick a contrasting text color based on the fill
 const getContrastColor = (hexColor) => {
   const color = hexColor.charAt(0) === '#' ? hexColor.slice(1) : hexColor;
   const r = parseInt(color.substr(0, 2), 16);
@@ -27,51 +19,66 @@ const getContrastColor = (hexColor) => {
   return brightness < 128 ? "#fff" : "#000";
 };
 
-// Spacing constants for layout
-const horizontalSpacing = 350;
-const verticalSpacing = 250;
+const HORIZONTAL_SPACING = 350;
+const ROOT_HORIZONTAL_SPACING = 550;
+const VERTICAL_SPACING = 250;
 
-// A helper function to compute approximate text dimensions.
-const getTextDimensions = (text, fontSize = 14, padding = 20) => {
+const getTextDimensions = (text, fontSize = 18, padding = 25, isRoot = false) => {
   const lines = text.split('\n');
   const lineCount = lines.length;
   const avgCharWidth = fontSize * 0.6;
-  const maxLineLength = Math.max(...lines.map((line) => line.length));
-  const width = maxLineLength * avgCharWidth + padding;
-  const height = lineCount * (fontSize + 2) + padding;
+  const maxLineLength = Math.max(...lines.map(line => line.length));
+  const baseWidth = maxLineLength * avgCharWidth + padding;
+  const width = isRoot ? baseWidth * 1 : baseWidth;
+  const height = (lineCount * (fontSize + 2) + padding) * (isRoot ? 1.8 : 1);
   return { width, height };
 };
 
-// Recursive layout function that assigns x, y coordinates and depth to each node.
-const layoutTree = (node, depth = 0, yOffsetRef = { current: 50 }) => {
+const getTreeBounds = (nodes) => {
+  const xs = nodes.map(node => node.x);
+  const ys = nodes.map(node => node.y - node.height / 2);
+  const xMaxs = nodes.map(node => node.x + node.width);
+  const yMaxs = nodes.map(node => node.y + node.height / 2);
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xMaxs),
+    maxY: Math.max(...yMaxs),
+  };
+};
+
+const layoutTree = (node, depth = 0, yOffsetRef = { current: 0 }) => {
   node.depth = depth;
-  node.x = depth * horizontalSpacing + 200;
-  if (!node.width || !node.height) {
-    const { width, height } = getTextDimensions(node.label);
-    node.width = width;
-    node.height = height;
-  }
+  node.x = depth === 0 ? 0 : (depth - 1) * HORIZONTAL_SPACING + ROOT_HORIZONTAL_SPACING;
+
+  const isRoot = depth === 0;
+  const fontSize = isRoot ? 36 : 18;
+  const padding = isRoot ? 40 : 25;
+  const { width, height } = getTextDimensions(node.label, fontSize, padding, isRoot);
+  node.width = width;
+  node.height = height;
+
   if (node.children && node.children.length > 0) {
-    const startY = yOffsetRef.current;
-    node.children.forEach((child) => {
-      layoutTree(child, depth + 1, yOffsetRef);
-    });
-    const endY = yOffsetRef.current - verticalSpacing;
-    node.y = (startY + endY) / 2;
+    const childYOffsets = { current: yOffsetRef.current };
+    node.children.forEach(child => layoutTree(child, depth + 1, childYOffsets));
+    const childHeights = node.children.map(child => child.y);
+    const minChildY = Math.min(...childHeights);
+    const maxChildY = Math.max(...childHeights);
+    node.y = (minChildY + maxChildY) / 2;
+    yOffsetRef.current = maxChildY + VERTICAL_SPACING;
   } else {
-    node.y = yOffsetRef.current;
-    yOffsetRef.current += verticalSpacing;
+    node.y = yOffsetRef.current + height / 2;
+    yOffsetRef.current += VERTICAL_SPACING;
   }
 };
 
-// Convert the tree structure into flat arrays of nodes and edges.
 const flattenTree = (node) => {
   const nodes = [];
   const edges = [];
   const traverse = (current) => {
     nodes.push(current);
     if (current.children && current.children.length > 0) {
-      current.children.forEach((child) => {
+      current.children.forEach(child => {
         edges.push({ from: current, to: child });
         traverse(child);
       });
@@ -93,46 +100,42 @@ const getCurvePath = (from, to) => {
   return `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`;
 };
 
-const getMaxDepth = (node, depth = 0) => {
-  if (!node.children || node.children.length === 0) return depth;
-  return Math.max(...node.children.map((child) => getMaxDepth(child, depth + 1)));
-};
-
-// Helper functions to transform JSON data (inserts newline after words)
-function insertNewLinesByWidth(label, maxWidth, fontSize = 14) {
+function insertNewLinesByWidth(label, maxWidth, fontSize = 18, isRoot = false) {
   const words = label.trim().split(/\s+/);
   const lines = [];
   let currentLine = '';
   const approxCharWidth = fontSize * 0.6;
-  words.forEach(word => {
-    const testLine = currentLine ? currentLine + ' ' + word : word;
-    if (testLine.length * approxCharWidth > maxWidth) {
-      if (currentLine) {
-        lines.push(currentLine);
+  const effectiveMaxWidth = isRoot ? maxWidth * 0.4 : maxWidth; // Tighter for root (2 words)
+
+  if (isRoot) {
+    // Force 2 words per line for root
+    for (let i = 0; i < words.length; i += 2) {
+      lines.push(words.slice(i, i + 2).join(' '));
+    }
+  } else {
+    words.forEach(word => {
+      const testLine = currentLine ? currentLine + ' ' + word : word;
+      if (testLine.length * approxCharWidth > effectiveMaxWidth) {
+        if (currentLine) lines.push(currentLine);
         currentLine = word;
       } else {
-        lines.push(word);
-        currentLine = '';
+        currentLine = testLine;
       }
-    } else {
-      currentLine = testLine;
-    }
-  });
-  if (currentLine) {
-    lines.push(currentLine);
+    });
+    if (currentLine) lines.push(currentLine);
   }
   return lines.join('\n');
 }
 
-function transformLabels(data) {
+function transformLabels(data, depth = 0) {
   if (Array.isArray(data)) {
-    data.forEach((item) => transformLabels(item));
-  } else if (data !== null && typeof data === 'object') {
+    data.forEach(item => transformLabels(item, depth + 1));
+  } else if (data && typeof data === 'object') {
     for (const key in data) {
       if (key === 'label' && typeof data[key] === 'string') {
-        data[key] = insertNewLinesByWidth(data[key], 250);
+        data[key] = insertNewLinesByWidth(data[key], 250, depth === 0 ? 36 : 18, depth === 0);
       } else {
-        transformLabels(data[key]);
+        transformLabels(data[key], depth + 1);
       }
     }
   }
@@ -144,7 +147,10 @@ class GraphDiagram extends Component {
   constructor(props) {
     super(props);
     const { submodule } = this.props.route.params;
-    console.log("submodule mind map:", submodule.lessonData);
+    const windowDimensions = Dimensions.get("window");
+    this.windowWidth = windowDimensions.width;
+    this.windowHeight = windowDimensions.height;
+
     let parsedMindMap = null;
     try {
       parsedMindMap = JSON5.parse(submodule.lessonData);
@@ -152,24 +158,28 @@ class GraphDiagram extends Component {
       console.log('Error parsing mind map data:', e);
     }
 
-    if (parsedMindMap) {
-      transformLabels(parsedMindMap);
-      this.treeData = parsedMindMap;
-    } else {
-      this.treeData = {};
-    }
-
-    // Create a deep copy so that layout modifications do not affect the original object.
-    this.treeData = JSON.parse(JSON.stringify(this.treeData));
+    this.treeData = parsedMindMap ? JSON.parse(JSON.stringify(parsedMindMap)) : {};
+    transformLabels(this.treeData);
     layoutTree(this.treeData);
     const { nodes, edges } = flattenTree(this.treeData);
     this.nodes = nodes;
     this.edges = edges;
 
-    const initialElapsedTime =
-      submodule.progress && submodule.progress.lastTime
-        ? submodule.progress.lastTime
-        : 0;
+    const bounds = getTreeBounds(this.nodes);
+    const treeWidth = bounds.maxX - bounds.minX;
+    const treeHeight = bounds.maxY - bounds.minY;
+    const padding = 200;
+    this.virtualCanvasWidth = Math.max(this.windowWidth, treeWidth + 2 * padding);
+    this.virtualCanvasHeight = Math.max(this.windowHeight, treeHeight + 2 * padding);
+
+    const offsetX = (this.virtualCanvasWidth - treeWidth) / 2 - bounds.minX;
+    const offsetY = (this.virtualCanvasHeight - treeHeight) / 2 - bounds.minY;
+    this.nodes.forEach(node => {
+      node.x += offsetX;
+      node.y += offsetY;
+    });
+
+    const initialElapsedTime = submodule.progress?.lastTime || 0;
     this.state = {
       elapsedTime: initialElapsedTime,
       showModal: false,
@@ -178,30 +188,22 @@ class GraphDiagram extends Component {
   }
 
   componentDidMount() {
-    // Set up an interval to update progress every 10 seconds.
     this.progressTimer = setInterval(() => {
       this.setState(
-        (prevState) => ({ elapsedTime: prevState.elapsedTime + 10 }),
-        () => {
-          // Use 60 seconds as the fixed denominator for calculating completion percentage.
-          this.handleProgressUpdate(this.state.elapsedTime, 60);
-        }
+        prevState => ({ elapsedTime: prevState.elapsedTime + 10 }),
+        () => this.handleProgressUpdate(this.state.elapsedTime, 60)
       );
     }, 10000);
   }
 
   componentWillUnmount() {
-    if (this.progressTimer) {
-      clearInterval(this.progressTimer);
-    }
+    if (this.progressTimer) clearInterval(this.progressTimer);
   }
 
   handleProgressUpdate = async (currentTime, duration) => {
-    console.log("Updating progress for mind map:", currentTime, duration);
     const { submodule } = this.props.route.params;
     const { session } = this.context;
 
-    // Calculate completion percentage based on fixed duration (60 seconds)
     let completionPercentage = (currentTime / duration) * 100;
     let progressStatus = "Not Started";
     if (completionPercentage >= 95) {
@@ -214,12 +216,11 @@ class GraphDiagram extends Component {
     const now = new Date().toISOString();
     const completionDate = completionPercentage === 100 ? now : null;
 
-    // Update the local session state
-    const updatedModules = session.modules.map((mod) =>
+    const updatedModules = session.modules.map(mod =>
       mod.id === submodule.moduleId
         ? {
           ...mod,
-          submodules: mod.submodules.map((sub) =>
+          submodules: mod.submodules.map(sub =>
             sub.id === submodule.id
               ? {
                 ...sub,
@@ -227,9 +228,9 @@ class GraphDiagram extends Component {
                   ...sub.progress,
                   lastTime: currentTime,
                   lastUpdated: now,
-                  completionDate: (currentTime / duration) >= 0.99 ? now : null,
-                  completionPercentage: completionPercentage,
-                  progressStatus: progressStatus,
+                  completionDate,
+                  completionPercentage,
+                  progressStatus,
                 },
               }
               : sub
@@ -239,19 +240,16 @@ class GraphDiagram extends Component {
     );
     this.context.setSession({ ...session, modules: updatedModules });
 
-    // Update Firestore
     try {
       await updateUserProgress(
-        [
-          {
-            id: submodule.id,
-            completionPercentage: Math.min((currentTime / duration) * 100, 100),
-            lastUpdated: now,
-            completionDate: completionDate,
-            lastTime: currentTime,
-            progressStatus: progressStatus,
-          },
-        ],
+        [{
+          id: submodule.id,
+          completionPercentage: Math.min((currentTime / duration) * 100, 100),
+          lastUpdated: now,
+          completionDate,
+          lastTime: currentTime,
+          progressStatus,
+        }],
         submodule.moduleId,
         session.userUid
       );
@@ -267,9 +265,16 @@ class GraphDiagram extends Component {
 
   renderNode = (node) => {
     const lines = node.label.split('\n');
-    // Select a chalk color based on node depth.
     const fill = chalkColors[node.depth % chalkColors.length];
     const textFill = getContrastColor(fill);
+
+    const isRoot = node.depth === 0;
+    const fontSize = isRoot ? 36 : 18;
+    const padding = isRoot ? 40 : 25;
+    const { width, height } = getTextDimensions(node.label, fontSize, padding, isRoot);
+
+    node.width = width;
+    node.height = height;
 
     return (
       <G key={node.id} onPress={() => this.handleNodePress(node)}>
@@ -286,14 +291,14 @@ class GraphDiagram extends Component {
         />
         <SvgText
           x={node.x + node.width / 2}
-          y={node.y - (lines.length - 1) * 8}
+          y={node.y - (lines.length - 1) * (isRoot ? 18 : 10)}
           fill={textFill}
-          fontSize="14"
+          fontSize={fontSize}
           fontWeight="normal"
           textAnchor="middle"
         >
           {lines.map((line, index) => (
-            <TSpan key={index} x={node.x + node.width / 2} dy={index === 0 ? 0 : 16}>
+            <TSpan key={index} x={node.x + node.width / 2} dy={index === 0 ? 0 : (isRoot ? 36 : 20)}>
               {line}
             </TSpan>
           ))}
@@ -303,33 +308,33 @@ class GraphDiagram extends Component {
   };
 
   render() {
-    const virtualCanvasWidth = 4 * 500; // 2000 pixels wide
-    const virtualCanvasHeight = this.treeData.children.length * 900;
-    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-    const svgWidth = screenWidth + 200;
-    const svgHeight = screenHeight + 200;
+    const scaleFactor = 2;
+    const svgWidth = this.windowWidth * scaleFactor;
+    const svgHeight = this.windowHeight * scaleFactor;
     const { submodule, module } = this.props.route.params;
 
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.BLACK_LIGHT }}>
         <BackArrow
           title={submodule.name}
-          color={"#fff"}
+          color="#fff"
           AIModal={true}
           module={module}
         />
         <ReactNativeZoomableView
-          maxZoom={5}
+          maxZoom={4}
           minZoom={0.2}
           zoomStep={0.5}
-          contentWidth={virtualCanvasWidth}
-          contentHeight={virtualCanvasHeight}
-          style={{ width: '100%', height: '100%' }}
+          contentWidth={this.virtualCanvasWidth}
+          contentHeight={this.virtualCanvasHeight}
+          style={{
+            backgroundColor: COLORS.BLACK_LIGHT,
+          }}
         >
           <Svg
             width={svgWidth}
             height={svgHeight}
-            viewBox={`0 0 ${virtualCanvasWidth} ${virtualCanvasHeight}`}
+            viewBox={`0 0 ${this.virtualCanvasWidth} ${this.virtualCanvasHeight}`}
           >
             <Defs>
               <Marker
@@ -344,23 +349,18 @@ class GraphDiagram extends Component {
                 <Path d="M0,0 L0,10 L10,5 Z" fill="#fff" />
               </Marker>
             </Defs>
-            {/* Render nodes */}
-            <G id="nodes">{this.nodes.map((node) => this.renderNode(node))}</G>
-            {/* Render edges */}
+            <G id="nodes">{this.nodes.map(node => this.renderNode(node))}</G>
             <G id="edges">
-              {this.edges.map((edge, idx) => {
-                const d = getCurvePath(edge.from, edge.to);
-                return (
-                  <Path
-                    key={`edge-${idx}`}
-                    d={d}
-                    stroke="#fff"
-                    strokeWidth="2"
-                    fill="none"
-                    markerEnd="url(#arrow)"
-                  />
-                );
-              })}
+              {this.edges.map((edge, idx) => (
+                <Path
+                  key={`edge-${idx}`}
+                  d={getCurvePath(edge.from, edge.to)}
+                  stroke="#fff"
+                  strokeWidth="2"
+                  fill="none"
+                  markerEnd="url(#arrow)"
+                />
+              ))}
             </G>
           </Svg>
         </ReactNativeZoomableView>

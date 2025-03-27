@@ -18,6 +18,7 @@ import MindMap from "./src/ui/screens/submodulesView/mindMapSubmodule/MindMapSub
 import QuizSubmoduleScreen from "./src/ui/screens/submodulesView/quizSubmodule/QuizSubmoduleScreen";
 import LearningStyleResults from "./src/ui/screens/learningStyleView/LearningStyleResults";
 import SubmoduleResultsScreen from "./src/ui/screens/submodulesView/SubmoduleResultsScreen";
+import TestScreen from "./src/ui/screens/TestScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -53,6 +54,8 @@ export default class App extends Component {
         <SessionProvider value={{ session: this.state.session, setSession: this.setSession }}>
           <NavigationContainer>
             <Stack.Navigator initialRouteName={"SplashScreen"} screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="TestScreen" component={TestScreen}/>
+
               <Stack.Screen name="SplashScreen" component={SplashScreen} />
               <Stack.Screen name="SignUp" component={SignUpManagementScreen} />
               <Stack.Screen name="Upload" component={UploadManagementScreen} />

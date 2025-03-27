@@ -26,7 +26,6 @@ export default class ModulesManagementScreen extends Component {
     this.state = {
       modalVisible: false,
       selectedModule: null,
-      // When opening the modal, preselect the already enrolled students.
       selectedUserIds: [],
       imageError: false,
     };
@@ -131,6 +130,13 @@ export default class ModulesManagementScreen extends Component {
   render() {
     const { modules, adminMode, myStudents, userUid } = this.context.session;
     const { modalVisible, selectedUserIds, selectedModule, imageError } = this.state;
+    const sortedModules = modules.slice().sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB - dateA;
+    });
+    console.log("dates", modules)
+
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#f1f1f1" }}>
         <StatusBar
@@ -172,7 +178,7 @@ export default class ModulesManagementScreen extends Component {
           }}
         >
           {modules && modules.length > 0 ? (
-            modules.map((module) => {
+            sortedModules.map((module) => {
               const progress = this.calculateProgress(module.submodules);
               return (
                 <View

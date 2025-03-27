@@ -262,7 +262,7 @@ class QuizSubmoduleScreen extends Component {
       <View
         style={{
           flex: 1,
-          backgroundColor: Colors.MAROON_LIGHT
+          backgroundColor: Colors.MAROON
       }}>
         <StatusBar
           translucent
@@ -281,8 +281,8 @@ class QuizSubmoduleScreen extends Component {
               backgroundColor: Colors.SPACE_GREY_LIGHT,
               padding: windowWidth * (16 / 375),
               borderRadius: windowWidth * (8 / 375),
-              borderWidth: windowWidth * (1 / 375),
-              borderColor: Colors.MAROON,
+              // borderWidth: windowWidth * (1 / 375),
+              // borderColor: Colors.MAROON,
               marginBottom: windowWidth * (16 / 375),
               width: windowWidth * 0.95,
               shadowColor: Colors.BLACK,
@@ -367,7 +367,7 @@ class QuizSubmoduleScreen extends Component {
               <TouchableOpacity
                 onPress={this.handleSubmitAnswer}
                 style={{
-                  backgroundColor: Colors.RED,
+                  backgroundColor: Colors.MAROON,
                   padding: windowWidth * (12 / 375),
                   borderRadius: windowWidth * (4 / 375),
                   alignItems: "center",
@@ -443,7 +443,7 @@ class QuizSubmoduleScreen extends Component {
                 <TouchableOpacity
                   onPress={this.handleNextQuestion}
                   style={{
-                    backgroundColor: Colors.RED,
+                    backgroundColor: Colors.MAROON,
                     padding: windowWidth * (12 / 375),
                     borderRadius: windowWidth * (4 / 375),
                     alignItems: "center",

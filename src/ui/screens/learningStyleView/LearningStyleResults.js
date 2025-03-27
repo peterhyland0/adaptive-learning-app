@@ -19,9 +19,6 @@ export default class LearningStyleResultsScreen extends Component {
 
   constructor(props) {
     super(props);
-    const { width } = Dimensions.get("window");
-    this.chartSize = width * 0.8;
-
     const windowDimensions = Dimensions.get("window");
     this.windowWidth = windowDimensions.width;
     this.windowHeight = windowDimensions.height;
@@ -57,11 +54,11 @@ export default class LearningStyleResultsScreen extends Component {
       ...prevSession,
       user: {
         ...prevSession.user,
-        submodulePreference: selectedModules,
+        submodulePreferences: selectedModules,
       },
     }));
     // Update preferences in the backend then navigate
-    updateSubmodulePreferences(userUid, selectedModules)
+    await updateSubmodulePreferences(userUid, selectedModules)
     .then(() => this.props.navigation.navigate("Upload"))
     .catch((error) => console.error("Error updating submodule preferences:", error));
   };

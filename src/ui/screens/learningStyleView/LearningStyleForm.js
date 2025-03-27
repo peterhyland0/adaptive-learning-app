@@ -86,15 +86,12 @@ export default class LearningStyleForm extends Component {
       const result = await response.text();
       this.context.setSession((prevSession) => ({
         ...prevSession,
-        // myLearningStyle: result,
         user: {
           ...prevSession.user,
           myLearningStyle: result,
         },
       }));
-      console.log("after style", this.context);
-      const userLearningStyleResult = await updateUserLearningStyle(this.context.session.userUid, result)
-      console.log('result', userLearningStyleResult);
+      await updateUserLearningStyle(this.context.session.userUid, result)
       this.props.navigation.navigate("LearningStyleResults");
       console.log("Prediction result:", result);
     } catch (error) {
