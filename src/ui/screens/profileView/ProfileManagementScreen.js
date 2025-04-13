@@ -63,6 +63,7 @@ export default class ProfileManagementScreen extends Component {
     try {
       await auth().signOut();
       this.context.setSession({ token: null });
+      console.log("session after log out: ", this.context);
       this.props.navigation.navigate("SignUp");
     } catch (error) {
       Alert.alert("Logout Error", "Failed to log out properly.");

@@ -10,17 +10,13 @@ export const updateUserProgress = async (submodulesData, moduleId, createdBy) =>
 
   try {
     submodulesData.forEach((submodule) => {
-      console.log("Updating Submodule", submodule.id, submodule);
       const userProgressDocRef = firestore()
       .collection("userProgress")
       .doc(createdBy)
       .collection("submoduleProgress")
       .doc(submodule.id);
-      // console.log(submodulesData.completionDate)
-
       batch.set(userProgressDocRef, {
         completionPercentage: submodule.completionPercentage,
-        lastTime: submodule.lastTime,
         lastUpdated: submodule.lastUpdated,
         completionDate: submodule.completionDate,
         progressStatus: submodule.progressStatus,

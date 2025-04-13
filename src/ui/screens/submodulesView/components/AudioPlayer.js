@@ -262,9 +262,4 @@ class AudioPlayer extends Component {
   }
 }
 
-const styles = StyleSheet.create({
-  controlButton: {},
-  playPauseButton: {},
-});
-
 export default AudioPlayer;

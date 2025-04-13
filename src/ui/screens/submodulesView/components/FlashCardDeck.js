@@ -15,11 +15,14 @@ class FlashCardDeck extends Component {
       flipInProgress: false,
       sessionComplete: false,
       progressUpdated: false,
+      flipTrigger: 0,
+      currentCardIndex: 0,
     };
     const windowDimensions = Dimensions.get("window");
     this.windowWidth = windowDimensions.width;
     this.windowHeight = windowDimensions.height;
-  }
+    this.swiperRef = React.createRef();
+    this.topCardRef = React.createRef();  }
 
   componentDidUpdate(prevProps, prevState) {
     // When sessionComplete changes to true and progress hasn't been updated yet,
@@ -48,23 +51,26 @@ class FlashCardDeck extends Component {
       }
     }
   }
+// Update onSwipedLeft
   onSwipedLeft = (cardIndex) => {
     const card = this.state.cards[cardIndex];
     if (card) {
       this.setState((prevState) => ({
         dontKnowList: [...prevState.dontKnowList, card],
+        currentCardIndex: prevState.currentCardIndex + 1,
       }));
     }
     if (cardIndex === this.state.cards.length - 1) {
       this.handleComplete();
     }
   };
-
+// Update onSwipedRight (similarly)
   onSwipedRight = (cardIndex) => {
     const card = this.state.cards[cardIndex];
     if (card) {
       this.setState((prevState) => ({
         knowList: [...prevState.knowList, card],
+        currentCardIndex: prevState.currentCardIndex + 1,
       }));
     }
     if (cardIndex === this.state.cards.length - 1) {
@@ -96,32 +102,47 @@ class FlashCardDeck extends Component {
     });
   };
 
-  renderCard = (card, index) => {
-    if (!card) {
-      return (
-        <Text style={{ fontSize: 22, color: "gray", textAlign: "center" }}>
-          No more cards
-        </Text>
-      );
-    }
+// Modify renderCard
+  renderCard = (card) => {
+    const index = this.state.cards.indexOf(card);
+    const isTopCard = index === this.state.currentCardIndex;
     return (
       <FlashCard
         card={card}
-        hideText={index !== 0 && this.state.flipInProgress}
-        {...(index === 0 && {
+        hideText={!isTopCard && this.state.flipInProgress}
+        ref={isTopCard ? this.topCardRef : null}
+        {...(isTopCard && {
           onFlipStart: () => this.setState({ flipInProgress: true }),
           onFlipEnd: () => this.setState({ flipInProgress: false }),
         })}
       />
     );
   };
+// New method to swipe left programmatically
+  swipeLeft = () => {
+    if (this.swiperRef.current) {
+      this.swiperRef.current.swipeLeft();
+    }
+  };
 
+  // New method to swipe right programmatically
+  swipeRight = () => {
+    if (this.swiperRef.current) {
+      this.swiperRef.current.swipeRight();
+    }
+  };
+  flipCard = () => {
+    if (this.topCardRef.current) {
+      this.topCardRef.current.flip();
+    }
+  };
   render() {
     const { knowList, dontKnowList, sessionComplete } = this.state;
     const total = knowList.length + dontKnowList.length;
     const correctPercentage = total ? (knowList.length / total) * 100 : 0;
-
-    // Render a local results view if the session is complete and there are unknown cards.
+    const totalCards = this.props.lessonData.flashcards.length ;
+    const currentCardNumber = (knowList.length + dontKnowList.length) ;
+    const progressPercentage = (currentCardNumber / totalCards) * 100; // Changed to percentage
     if (sessionComplete && dontKnowList.length > 0) {
       return (
         <View
@@ -209,18 +230,128 @@ class FlashCardDeck extends Component {
     }
 
     return (
-      <Swiper
-        cards={this.state.cards}
-        renderCard={this.renderCard}
-        onSwipedLeft={this.onSwipedLeft}
-        onSwipedRight={this.onSwipedRight}
-        onSwipedAll={this.handleComplete}
-        cardIndex={0}
-        backgroundColor="transparent"
-        stackSize={3}
-        cardVerticalMargin={50}
-        animateCardOpacity
-      />
+      <View
+        style={{
+          position: "absolute",
+          top: 50,
+          left: 0
+        }}
+      >
+        {/*<View*/}
+        {/*  style={{*/}
+        {/*    width: this.windowWidth * 0.35,*/}
+        {/*    alignItems: "center",*/}
+        {/*    justifyContent: "center",*/}
+        {/*  }}*/}
+        {/*>*/}
+        {/*  <Text*/}
+        {/*    style={{*/}
+        {/*      color: COLORS.BLACK,*/}
+        {/*      fontSize: 20,*/}
+        {/*    }}*/}
+        {/*  >*/}
+        {/*    {currentCardNumber}/{totalCards}*/}
+        {/*  </Text>*/}
+        {/*</View>*/}
+        <View
+          style={{
+            width: this.windowWidth,
+            alignItems: "center",
+          }}
+        >
+        <View
+          style={{
+            height: 10,
+            backgroundColor: "#808080", // Grey background
+            borderRadius: 5,
+            overflow: "hidden",
+            width: this.windowWidth * 0.8,
+          }}
+        >
+          <View
+            style={{
+              height: "100%",
+              backgroundColor: "#FFFFFF", // White progress
+              width: `${progressPercentage}%`, // Use percentage value
+              borderRadius: 5,
+            }}
+          />
+        </View>
+        </View>
+        <Swiper
+          ref={this.swiperRef}
+          cards={this.state.cards}
+          renderCard={this.renderCard}
+          onSwipedLeft={this.onSwipedLeft}
+          onSwipedRight={this.onSwipedRight}
+          onSwipedAll={this.handleComplete}
+          cardIndex={0}
+          backgroundColor="transparent"
+          stackSize={3}
+          cardVerticalMargin={50}
+          animateCardOpacity
+        />
+
+        {/* Button Row */}
+        <View
+          style={{
+            position: "absolute",
+            bottom: -650,
+            alignItems: "center",
+            flexDirection: "row",
+            width: this.windowWidth,
+            justifyContent: "space-around",
+            paddingBottom: 20,
+            paddingHorizontal: 10,
+            backgroundColor: "transparent", // Optional: slight background for visibility
+          }}
+        >
+          <TouchableOpacity
+            onPress={this.swipeLeft}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              backgroundColor: COLORS.MAROON_LIGHT,
+              borderRadius: 8,
+              width: this.windowWidth * 0.3,
+              alignItems: "center"
+            }}
+          >
+            <Text style={{ color: COLORS.MAROON, fontSize: 15 }}>
+              Don't Know
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={this.flipCard}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              backgroundColor: COLORS.MAROON,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 16 }}>Flip</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={this.swipeRight}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              backgroundColor: COLORS.MAROON_LIGHT,
+              borderRadius: 8,
+              width: this.windowWidth * 0.3,
+              alignItems: "center"
+            }}
+          >
+            <Text style={{ color: COLORS.MAROON, fontSize: 15 }}>
+              Know
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
     );
   }
 }

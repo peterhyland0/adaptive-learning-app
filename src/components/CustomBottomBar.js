@@ -44,6 +44,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#ccc',
+    // backgroundColor: '#1e1e1e',
+    // borderTopWidth: 1,
+    // borderTopColor: '#1e1e1e',
   },
   iconContainer: {
     alignItems: 'center',

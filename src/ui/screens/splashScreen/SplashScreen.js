@@ -35,12 +35,14 @@ export default class SplashScreen extends Component {
     const submodulesWithData = await Promise.all(
       submodules.map(async (submodule) => {
         try {
+          console.log("getSubmoduleProgressByUser: ",userId, submodule.id);
           const progress = await getSubmoduleProgressByUser(userId, submodule.id);
 
           let localFileName = null;
           let localFilePath = null;
-          console.log("This is podcast submodule download: ", submodule);
+          console.log("This is podcast submodule download: ", submodule.style);
           if (submodule.style === "Podcast") {
+            console.log("downloading file")
             localFileName = `podcast-${submodule.id}.mp3`;
             localFilePath = await downloadAudioFile(submodule.lessonData, localFileName);
           }

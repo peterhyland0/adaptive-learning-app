@@ -118,7 +118,7 @@ export default class ModulesManagementScreen extends Component {
   calculateProgress = (submodules) => {
     if (!submodules || submodules.length === 0) return 0;
     const completedSubmodules = submodules.filter(
-      (submodule) => submodule?.progress.progressStatus === "Completed"
+      (submodule) => submodule?.progress && submodule.progress.progressStatus === "Completed"
     );
     return (completedSubmodules.length / submodules.length) * 100;
   };
@@ -130,11 +130,13 @@ export default class ModulesManagementScreen extends Component {
   render() {
     const { modules, adminMode, myStudents, userUid } = this.context.session;
     const { modalVisible, selectedUserIds, selectedModule, imageError } = this.state;
-    const sortedModules = modules.slice().sort((a, b) => {
-      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-      return dateB - dateA;
-    });
+    const sortedModules = Array.isArray(modules)
+      ? modules.slice().sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return dateB - dateA;
+      })
+      : [];
     console.log("dates", modules)
 
     return (
@@ -409,6 +411,174 @@ export default class ModulesManagementScreen extends Component {
           </View>
         </Modal>
       </SafeAreaView>
+      // <SafeAreaView style={{ flex: 1, backgroundColor: "#121212" }}>
+      //   <StatusBar backgroundColor="#1e1e1e" barStyle="light-content" />
+      //
+      //   <View style={{
+      //     justifyContent: "center",
+      //     alignItems: "center",
+      //     paddingHorizontal: 20,
+      //     paddingTop: 50,
+      //     paddingBottom: 20,
+      //     backgroundColor: "#1E1E1E",
+      //   }}>
+      //     <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
+      //       Modules
+      //     </Text>
+      //   </View>
+      //
+      //   <ScrollView contentContainerStyle={{ alignItems: "center", paddingTop: 20, paddingBottom: 100 }}>
+      //     {modules && modules.length > 0 ? (
+      //       sortedModules.map((module) => {
+      //         const progress = this.calculateProgress(module.submodules);
+      //         return (
+      //           <View key={module.id} style={{ width: this.windowWidth * 0.9, marginBottom: 20 }}>
+      //             <TouchableOpacity
+      //               onPress={() => this.handleModulePress(module)}
+      //               style={{
+      //                 backgroundColor: "#1e1e1e",
+      //                 borderRadius: 15,
+      //                 elevation: 5,
+      //                 shadowColor: "#000",
+      //                 shadowOffset: { width: 0, height: 4 },
+      //                 shadowOpacity: 0.2,
+      //                 shadowRadius: 4,
+      //                 overflow: "hidden",
+      //               }}
+      //             >
+      //               <Image
+      //                 source={
+      //                   imageError
+      //                     ? require("../../../assets/images/modules.webp")
+      //                     : { uri: module.image }
+      //                 }
+      //                 style={{ width: "100%", height: 150, resizeMode: "cover" }}
+      //                 onError={this.handleImageError}
+      //               />
+      //               <View style={{ padding: 15 }}>
+      //                 <Text
+      //                   numberOfLines={3}
+      //                   ellipsizeMode="tail"
+      //                   style={{ fontSize: 20, color: "#fff", textAlign: "center", marginBottom: 15 }}
+      //                 >
+      //                   {module.name}
+      //                 </Text>
+      //                 <View style={{ alignItems: "center" }}>
+      //                   <Progress.Bar
+      //                     progress={progress / 100}
+      //                     width={this.windowWidth * 0.7}
+      //                     height={10}
+      //                     borderRadius={5}
+      //                     color="#A91D3A"
+      //                     unfilledColor="#333"
+      //                     style={{ marginBottom: 10 }}
+      //                   />
+      //                   <Text style={{ color: "#ccc", fontSize: 16 }}>
+      //                     {module.submodules.length} Submodules
+      //                   </Text>
+      //                 </View>
+      //               </View>
+      //             </TouchableOpacity>
+      //
+      //             {adminMode && (
+      //               <TouchableOpacity
+      //                 onPress={() => this.handleAddUsers(module)}
+      //                 style={{
+      //                   position: "absolute",
+      //                   top: 10,
+      //                   right: 10,
+      //                   backgroundColor: COLORS.MAROON,
+      //                   paddingVertical: 5,
+      //                   paddingHorizontal: 10,
+      //                   borderRadius: 5,
+      //                   zIndex: 10,
+      //                 }}
+      //               >
+      //                 <Text style={{ color: "#fff", fontSize: 20 }}>Manage Users</Text>
+      //               </TouchableOpacity>
+      //             )}
+      //           </View>
+      //         );
+      //       })
+      //     ) : (
+      //       <View style={{ alignItems: "center" }}>
+      //         <Text style={{ fontSize: 18, color: "#ccc", marginTop: 20 }}>
+      //           No modules found.
+      //         </Text>
+      //         <Text style={{ fontSize: 18, color: "#ccc", marginTop: 5 }}>
+      //           Upload content to create a module.
+      //         </Text>
+      //       </View>
+      //     )}
+      //   </ScrollView>
+      //
+      //   <CustomBottomBar navigation={this.props.navigation} activeTab="Modules" />
+      //
+      //   <Modal visible={modalVisible} animationType="fade" transparent onRequestClose={this.cancelModal}>
+      //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)" }}>
+      //       <View style={{ width: "80%", backgroundColor: "#1c1c1c", borderRadius: 10, padding: 20 }}>
+      //         <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10, color: "#fff" }}>
+      //           Select Users for Course
+      //         </Text>
+      //         <ScrollView style={{ maxHeight: 300 }}>
+      //           {myStudents &&
+      //             myStudents.map((student) => {
+      //               const isEnrolled = selectedModule?.createdBy?.includes(student.uid);
+      //               const isSelected = selectedUserIds.includes(student.uid);
+      //               const enrollmentText = isEnrolled ? "Enrolled" : "Not Enrolled";
+      //               const enrollmentColor = isEnrolled ? "lightgreen" : "tomato";
+      //
+      //               let buttonStyle = {
+      //                 padding: this.windowWidth * 0.03,
+      //                 marginBottom: this.windowWidth * 0.02,
+      //                 borderWidth: this.windowWidth * 0.005,
+      //                 borderColor: "#444",
+      //                 borderRadius: this.windowWidth * 0.02,
+      //                 backgroundColor: isSelected ? "#333" : "#2c2c2c",
+      //               };
+      //
+      //               return (
+      //                 <TouchableOpacity
+      //                   key={student.uid}
+      //                   onPress={() => this.toggleUserSelection(student.uid)}
+      //                   style={buttonStyle}
+      //                 >
+      //                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      //                     <Text style={{ fontSize: 14, color: "#eee" }}>{student.email}</Text>
+      //                     <Text style={{ fontSize: 12, color: enrollmentColor }}>{enrollmentText}</Text>
+      //                   </View>
+      //                 </TouchableOpacity>
+      //               );
+      //             })}
+      //         </ScrollView>
+      //
+      //         <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 20 }}>
+      //           <TouchableOpacity
+      //             onPress={this.cancelModal}
+      //             style={{
+      //               marginRight: 10,
+      //               backgroundColor: COLORS.MAROON_LIGHT,
+      //               borderRadius: 5,
+      //               padding: 10,
+      //             }}
+      //           >
+      //             <Text style={{ color: COLORS.MAROON }}>Cancel</Text>
+      //           </TouchableOpacity>
+      //           <TouchableOpacity
+      //             onPress={this.confirmAddUsers}
+      //             style={{
+      //               backgroundColor: COLORS.MAROON,
+      //               borderRadius: 5,
+      //               padding: 10,
+      //             }}
+      //           >
+      //             <Text style={{ color: "#fff", fontWeight: "bold" }}>Confirm Users</Text>
+      //           </TouchableOpacity>
+      //         </View>
+      //       </View>
+      //     </View>
+      //   </Modal>
+      // </SafeAreaView>
     );
   }
 }

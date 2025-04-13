@@ -647,6 +647,8 @@ export default class UploadManagementScreen extends Component {
             >
               <Icon name="image-outline" size={24} color="#aaa"/>
               <Text style={{color: "#aaa", fontSize: 16}}>Select File</Text>
+              <Text style={{color: "#aaa", fontSize: 16}}>(pdf, png, jpg, jpeg, mp4)</Text>
+
             </TouchableOpacity>
             <Animated.View
               style={{

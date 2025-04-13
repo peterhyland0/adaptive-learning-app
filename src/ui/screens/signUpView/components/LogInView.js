@@ -3,7 +3,8 @@ import React, { Component } from "react";
 import {View, Text, TouchableOpacity, ActivityIndicator, Dimensions} from "react-native";
 import { TextInput, Snackbar } from "react-native-paper";
 import COLORS from "../../../../constants/COLORS";
-import { login } from "../../../../api/LogIn"; // Make sure this is the correct import path
+import { login } from "../../../../api/LogIn";
+import FontAwesome from "react-native-vector-icons/FontAwesome"; // Make sure this is the correct import path
 
 export default class LogInView extends Component {
   constructor(props) {
@@ -70,10 +71,15 @@ export default class LogInView extends Component {
         backgroundColor: COLORS.SPACE_GREY,
       }}
       >
+        <View style={{ alignItems: 'center', marginBottom: 10 }}>
+          <FontAwesome name="sign-in" size={50} color={COLORS.MAROON} />
+        </View>
         <Text style={{
           fontSize: 24,
           marginBottom: 20,
-          textAlign: "center",
+          color: COLORS.MAROON,
+          textAlign: 'center',
+          fontWeight: "bold",
         }}
         >
           Log In

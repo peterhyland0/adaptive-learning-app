@@ -1,6 +1,6 @@
 import { Component } from "react";
 import { SessionContext } from "../../../../util/SessionContext";
-import { Dimensions, View } from "react-native";
+import {Dimensions, Text, View} from "react-native";
 import FlashCardDeck from "../components/FlashCardDeck";
 import BackArrow from "../../../../util/BackArrow";
 import JSON5 from "json5";
@@ -105,6 +105,13 @@ export default class FlashCardSubmoduleScreen extends Component {
             width: "100%",
           }}
         >
+          {/*<Text*/}
+          {/*  style={{*/}
+          {/*    backgroundColor: "red"*/}
+          {/*  }}*/}
+          {/*>*/}
+          {/*  10*/}
+          {/*</Text>*/}
           <FlashCardDeck
             lessonData={parsedFlashCards}
             updateQuizProgress={this.updateQuizProgress}

@@ -13,9 +13,11 @@ import CodeHighlighter from "react-native-code-highlighter";
 import { atomOneDarkReasonable } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import COLORS from "../../../../constants/COLORS";
 
-const FlashCard = ({ card }) => {
+const FlashCard = React.forwardRef((props, ref) => {
   const rotation = useSharedValue(0);
   const [flipped, setFlipped] = useState(false);
+
+  const { card } = props;
 
   const handlePress = () => {
     const newRotation = rotation.value === 0 ? 180 : 0;
@@ -25,6 +27,9 @@ const FlashCard = ({ card }) => {
       }
     });
   };
+  React.useImperativeHandle(ref, () => ({
+    flip: handlePress,
+  }));
 
   const frontAnimatedStyle = useAnimatedStyle(() => {
     const rotateY = `${interpolate(rotation.value, [0, 180], [0, 180], Extrapolate.CLAMP)}deg`;
@@ -70,7 +75,7 @@ const FlashCard = ({ card }) => {
               backgroundColor: COLORS.BLACK,
               borderRadius: 10,
             }}
-            textStyle={{ fontSize: 16 }}
+            textStyle={{ fontSize: 13 }}
             language="c"
           >
             {codeString}
@@ -188,6 +193,6 @@ const FlashCard = ({ card }) => {
       </Animated.View>
     </Pressable>
   );
-};
+});
 
 export default FlashCard;

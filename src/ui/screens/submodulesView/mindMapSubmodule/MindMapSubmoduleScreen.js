@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { StyleSheet, Dimensions, View } from 'react-native';
+import { Dimensions, View, Modal, TouchableOpacity, Text } from 'react-native';
 import Svg, { Rect, Text as SvgText, TSpan, Path, G, Defs, Marker } from 'react-native-svg';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import COLORS from '../../../../constants/COLORS';
@@ -105,10 +105,9 @@ function insertNewLinesByWidth(label, maxWidth, fontSize = 18, isRoot = false) {
   const lines = [];
   let currentLine = '';
   const approxCharWidth = fontSize * 0.6;
-  const effectiveMaxWidth = isRoot ? maxWidth * 0.4 : maxWidth; // Tighter for root (2 words)
+  const effectiveMaxWidth = isRoot ? maxWidth * 0.4 : maxWidth;
 
   if (isRoot) {
-    // Force 2 words per line for root
     for (let i = 0; i < words.length; i += 2) {
       lines.push(words.slice(i, i + 2).join(' '));
     }
@@ -182,8 +181,8 @@ class GraphDiagram extends Component {
     const initialElapsedTime = submodule.progress?.lastTime || 0;
     this.state = {
       elapsedTime: initialElapsedTime,
-      showModal: false,
-      hasNavigated: false,
+      showModal: false, // Modal visibility
+      hasNavigated: false, // Prevent multiple navigations
     };
   }
 
@@ -191,7 +190,7 @@ class GraphDiagram extends Component {
     this.progressTimer = setInterval(() => {
       this.setState(
         prevState => ({ elapsedTime: prevState.elapsedTime + 10 }),
-        () => this.handleProgressUpdate(this.state.elapsedTime, 60)
+        () => this.handleProgressUpdate(this.state.elapsedTime, 100)
       );
     }, 10000);
   }
@@ -257,6 +256,32 @@ class GraphDiagram extends Component {
     } catch (err) {
       console.error("Firestore update failed:", err);
     }
+
+    if (completionPercentage >= 100 && !this.state.hasNavigated) {
+      this.setState({ showModal: true, hasNavigated: true });
+    }
+  };
+
+  handleRestart = () => {
+    this.setState({ elapsedTime: 0, showModal: false, hasNavigated: false }, () => {
+      // Restart the timer
+      if (this.progressTimer) clearInterval(this.progressTimer);
+      this.progressTimer = setInterval(() => {
+        this.setState(
+          prevState => ({ elapsedTime: prevState.elapsedTime + 10 }),
+          () => this.handleProgressUpdate(this.state.elapsedTime, 100)
+        );
+      }, 10000);
+    });
+  };
+
+  handleSeeResults = () => {
+    this.setState({ showModal: false }, () => {
+      this.props.navigation.navigate("SubmoduleResultsScreen", {
+        correctPercentage: 100,
+        learningStyle: "visual",
+      });
+    });
   };
 
   handleNodePress = (node) => {
@@ -364,6 +389,64 @@ class GraphDiagram extends Component {
             </G>
           </Svg>
         </ReactNativeZoomableView>
+
+        {/* Modal for completion */}
+        <Modal
+          visible={this.state.showModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => {}}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                width: this.windowWidth * 0.8,
+                backgroundColor: "#fff",
+                borderRadius: 10,
+                padding: 20,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 20 }}>
+                Mindmap Finished!
+              </Text>
+              <Text style={{ fontSize: 16, marginBottom: 20, textAlign: "center" }}>
+                Would you like to restart the mindmap or see your results?
+              </Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-around", width: "100%" }}>
+                <TouchableOpacity
+                  onPress={this.handleRestart}
+                  style={{
+                    backgroundColor: "#A91D3A",
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 16 }}>Keep Studying</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={this.handleSeeResults}
+                  style={{
+                    backgroundColor: "#700E23",
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 16 }}>See Results</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }

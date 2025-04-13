@@ -138,7 +138,7 @@ export default class PodcastSubmoduleScreen extends Component {
             flex: 1,
             width: "100%",
             alignItems: "center",
-            paddingTop: 20,
+            // paddingTop: 20,
           }}
         >
           <BackArrow

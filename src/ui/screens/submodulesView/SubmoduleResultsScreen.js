@@ -123,11 +123,11 @@ export default class SubmoduleResultsScreen extends Component {
             <View style={{ marginBottom: 20 }}>
               <CircularProgress
                 value={correctPercentage}
-                progressValueColor={learningStyleInfo.textColor}
+                progressValueColor={"#4be057"}
                 radius={100}
                 inActiveStrokeOpacity={0.7}
                 inActiveStrokeColor={COLORS.MAROON}
-                activeStrokeColor={learningStyleInfo.textColor}
+                activeStrokeColor={"#4be057"}
                 activeStrokeWidth={40}
                 inActiveStrokeWidth={40}
                 progressValueStyle={{

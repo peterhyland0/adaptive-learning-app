@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-na
 import { TextInput, Snackbar } from "react-native-paper";
 import COLORS from "../../../../constants/COLORS";
 import { signUp } from "../../../../api/signUp";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 export default class SignUpView extends Component {
   state = {
@@ -52,11 +53,19 @@ export default class SignUpView extends Component {
         backgroundColor: COLORS.SPACE_GREY,
       }}
       >
-        <Text style={{
-          fontSize: 24,
-          marginBottom: 20,
-          textAlign: "center",
-        }}
+        {/* Sign-In Icon */}
+        <View style={{ alignItems: 'center', marginBottom: 10 }}>
+          <FontAwesome name="sign-in" size={50} color={COLORS.MAROON} />
+        </View>
+
+        <Text
+          style={{
+            fontSize: 24,
+            marginBottom: 20,
+            color: COLORS.MAROON,
+            textAlign: 'center',
+            fontWeight: "bold",
+          }}
         >
           Sign Up
         </Text>
@@ -81,6 +90,15 @@ export default class SignUpView extends Component {
 
         <TextInput
           label="Password"
+          mode="outlined"
+          secureTextEntry
+          value={password}
+          onChangeText={(text) => this.setState({ password: text })}
+          style={{ marginBottom: 16, color: COLORS.MAROON }}
+          theme={{ colors: { text: COLORS.MAROON, primary: COLORS.MAROON } }}
+        />
+        <TextInput
+          label="Confirm Password"
           mode="outlined"
           secureTextEntry
           value={password}

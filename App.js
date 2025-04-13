@@ -18,10 +18,9 @@ import MindMap from "./src/ui/screens/submodulesView/mindMapSubmodule/MindMapSub
 import QuizSubmoduleScreen from "./src/ui/screens/submodulesView/quizSubmodule/QuizSubmoduleScreen";
 import LearningStyleResults from "./src/ui/screens/learningStyleView/LearningStyleResults";
 import SubmoduleResultsScreen from "./src/ui/screens/submodulesView/SubmoduleResultsScreen";
-import TestScreen from "./src/ui/screens/TestScreen";
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+// const Tab = createBottomTabNavigator();
 
 const firebaseConfig = {
   // Your Firebase config object from Firebase Console
@@ -30,6 +29,9 @@ const firebaseConfig = {
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
+// if (!auth().apps.length) {
+//   auth().initializeApp(firebaseConfig);
+// }
 
 export default class App extends Component {
   constructor(props) {
@@ -50,11 +52,11 @@ export default class App extends Component {
   render() {
     return (
       // Wrap your app with GestureHandlerRootView
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      // <GestureHandlerRootView style={{ flex: 1 }}>
         <SessionProvider value={{ session: this.state.session, setSession: this.setSession }}>
           <NavigationContainer>
             <Stack.Navigator initialRouteName={"SplashScreen"} screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="TestScreen" component={TestScreen}/>
+              {/*<Stack.Screen name="TestScreen" component={TestScreen}/>*/}
 
               <Stack.Screen name="SplashScreen" component={SplashScreen} />
               <Stack.Screen name="SignUp" component={SignUpManagementScreen} />
@@ -72,7 +74,7 @@ export default class App extends Component {
             </Stack.Navigator>
           </NavigationContainer>
         </SessionProvider>
-      </GestureHandlerRootView>
+      // </GestureHandlerRootView>
     );
   }
 }

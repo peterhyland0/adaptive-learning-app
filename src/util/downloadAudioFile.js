@@ -1,6 +1,6 @@
 // localAudioService.js
 import RNFS from 'react-native-fs';
-import { getDownloadURL } from "firebase/storage";
+// import { getDownloadURL } from "firebase/storage";
 
 /**
  * Downloads a file from 'remoteUrl' to a local path.
@@ -17,11 +17,15 @@ export async function downloadAudioFile(remoteUrl, localFileName) {
       return `file://${localPath}`;
     }
 
+    console.log("Downloading audio file", localFileName, remoteUrl);
+
     // Download the file
     const downloadResult = await RNFS.downloadFile({
       fromUrl: remoteUrl,
       toFile: localPath,
     }).promise;
+
+    console.log("downloadResult", downloadResult);
 
     if (downloadResult && downloadResult.statusCode === 200) {
       // Return a 'file://' URI so it can be read locally

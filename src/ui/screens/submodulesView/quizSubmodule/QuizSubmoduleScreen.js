@@ -8,12 +8,21 @@ import {
   Dimensions,
 } from "react-native";
 import BackArrow from "../../../../util/BackArrow";
-import LinearGradient from "react-native-linear-gradient";
 import { updateUserProgress } from "../../../../api/updateUserProgress";
 import { SessionContext } from "../../../../util/SessionContext";
-import Colors from "../../../../constants/COLORS"; // adjust path if necessary
+import Colors from "../../../../constants/COLORS";
+import CircularProgress from "react-native-circular-progress-indicator";
+import LinearGradient from "react-native-linear-gradient";
 
 const windowWidth = Dimensions.get("window").width;
+
+const PROGRESS_BAR_CONSTANTS = {
+  HEIGHT: 10,
+  BACKGROUND_COLOR: "#808080",
+  FILL_COLOR: "#FFFFFF",
+  BORDER_RADIUS: 5,
+  WIDTH_PERCENTAGE: 0.8,
+};
 
 class QuizSubmoduleScreen extends Component {
   static contextType = SessionContext;
@@ -22,7 +31,6 @@ class QuizSubmoduleScreen extends Component {
     super(props);
     const { submodule } = this.props.route.params;
 
-    // Parse lessonData (using eval should only be done with trusted sources)
     let parsedLessonData = {};
     if (submodule.lessonData) {
       try {
@@ -31,16 +39,33 @@ class QuizSubmoduleScreen extends Component {
         console.error("Error parsing lessonData:", error);
       }
     }
-    // Store questions as an instance property
-    this.questions = parsedLessonData.questions || [];
+    this.originalQuestions = parsedLessonData.questions || [];
+    this.questions = [...this.originalQuestions];
 
     this.state = {
       currentQuestionIndex: 0,
       selectedChoice: null,
       showExplanation: false,
-      score: 0,
+      score: 0, // Score for current attempt
+      totalScore: 0, // Cumulative score across attempts
       quizFinished: false,
+      wrongQuestions: [],
     };
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    // Navigate to SubmoduleResultsScreen when quiz finishes with a perfect score
+    if (
+      !prevState.quizFinished &&
+      this.state.quizFinished &&
+      this.state.totalScore === this.originalQuestions.length
+    ) {
+      const learningStyle = "quiz";
+      this.props.navigation.navigate("SubmoduleResultsScreen", {
+        correctPercentage: 100,
+        learningStyle,
+      });
+    }
   }
 
   handleSelectChoice = (index) => {
@@ -51,27 +76,27 @@ class QuizSubmoduleScreen extends Component {
     const { currentQuestionIndex, selectedChoice } = this.state;
     const currentQuestion = this.questions[currentQuestionIndex];
     if (selectedChoice === currentQuestion.Answer) {
-      this.setState((prevState) => ({ score: prevState.score + 1 }));
+      this.setState((prevState) => ({
+        score: prevState.score + 1,
+        totalScore: prevState.totalScore + 1,
+      }));
+    } else {
+      this.setState((prevState) => ({
+        wrongQuestions: [...prevState.wrongQuestions, currentQuestion],
+      }));
     }
     this.setState({ showExplanation: true });
   };
 
   updateQuizProgress = async () => {
-    const { score } = this.state;
+    const { totalScore } = this.state;
     const { submodule } = this.props.route.params;
     const { session, setSession } = this.context;
-    const completionPercentage = Math.round((score / this.questions.length) * 100);
-    console.log(
-      "completion percentage",
-      completionPercentage,
-      score,
-      this.questions.length
-    );
+    const completionPercentage = Math.round((totalScore / this.originalQuestions.length) * 100);
     const progressStatus = completionPercentage === 100 ? "Completed" : "In Progress";
     const now = new Date().toISOString();
     const completionDate = completionPercentage === 100 ? now : null;
 
-    // Update the session by modifying the appropriate submodule progress
     const updatedModules = session.modules.map((mod) =>
       mod.id === submodule.moduleId
         ? {
@@ -125,41 +150,156 @@ class QuizSubmoduleScreen extends Component {
       }));
     } else {
       await this.updateQuizProgress();
-      const completionPercentage = Math.round((this.state.score / this.questions.length) * 100);
-      // const completionPercentage = 100;
-
-      if (completionPercentage >= 100) {
-        this.props.navigation.navigate("SubmoduleResultsScreen", {
-          correctPercentage: completionPercentage,
-          learningStyle: "quiz", 
-        });
-      } else {
-        this.setState({ quizFinished: true });
-      }
+      this.setState({ quizFinished: true });
     }
   };
 
   resetQuiz = () => {
+    this.questions = [...this.originalQuestions];
     this.setState({
       currentQuestionIndex: 0,
       selectedChoice: null,
       showExplanation: false,
       score: 0,
+      totalScore: 0,
       quizFinished: false,
+      wrongQuestions: [],
     });
   };
 
+  reviseUnknown = () => {
+    this.questions = [...this.state.wrongQuestions];
+    this.setState((prevState) => ({
+      currentQuestionIndex: 0,
+      selectedChoice: null,
+      showExplanation: false,
+      score: 0, // Reset current attempt score
+      // totalScore remains unchanged to keep cumulative score
+      quizFinished: false,
+      wrongQuestions: [],
+    }));
+  };
+
+  renderResultsScreen = () => {
+    const { totalScore, wrongQuestions } = this.state;
+    const completionPercentage = Math.round((totalScore / this.originalQuestions.length) * 100);
+
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: Colors.MAROON,
+        }}
+      >
+        <View
+          style={{
+            width: 300,
+            height: 500,
+            alignSelf: "center",
+            backgroundColor: "#fff",
+            borderRadius: 10,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+            elevation: 10,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 30,
+              fontWeight: "600",
+              marginBottom: 16,
+              color: Colors.MAROON,
+            }}
+          >
+            Quiz Results
+          </Text>
+          <View
+            style={{
+              marginBottom: 16,
+              backgroundColor: "#fff",
+              width: windowWidth * 0.55,
+              height: windowWidth * 0.55,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress
+              value={completionPercentage}
+              radius={70}
+              inActiveStrokeOpacity={0.7}
+              inActiveStrokeColor={Colors.MAROON}
+              activeStrokeWidth={40}
+              inActiveStrokeWidth={40}
+              progressValueStyle={{
+                fontWeight: "bold",
+                color: "#ccc",
+              }}
+            />
+          </View>
+          <Text
+            style={{
+              fontSize: 18,
+              color: Colors.MAROON,
+              marginBottom: 16,
+            }}
+          >
+            Score: {totalScore} / {this.originalQuestions.length}
+          </Text>
+          {wrongQuestions.length > 0 && (
+            <TouchableOpacity
+              onPress={this.reviseUnknown}
+              style={{
+                width: windowWidth * 0.55,
+                paddingVertical: 12,
+                borderRadius: 12,
+                marginBottom: 16,
+                alignItems: "center",
+                backgroundColor: Colors.MAROON_LIGHT,
+              }}
+            >
+              <Text
+                style={{
+                  color: Colors.MAROON,
+                  fontSize: 18,
+                }}
+              >
+                Revise Unknown
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={this.resetQuiz}
+            style={{
+              width: windowWidth * 0.55,
+              paddingVertical: 12,
+              borderRadius: 12,
+              alignItems: "center",
+              backgroundColor: Colors.MAROON,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 18 }}>Restart Quiz</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   render() {
-    const { submodule, module } = this.props.route.params;
+    const { submodule } = this.props.route.params;
     const {
       currentQuestionIndex,
       selectedChoice,
       showExplanation,
-      score,
       quizFinished,
     } = this.state;
 
-    // If no questions are available, show an error screen.
+    const total = this.questions.length;
+    const progressPercentage = ((currentQuestionIndex) / total) * 100;
+
     if (this.questions.length === 0) {
       return (
         <View style={{ flex: 1, backgroundColor: Colors.SPACE_GREY }}>
@@ -180,68 +320,8 @@ class QuizSubmoduleScreen extends Component {
       );
     }
 
-    if (quizFinished) {
-      return (
-        <View style={{ flex: 1, backgroundColor: Colors.SPACE_GREY }}>
-          <StatusBar
-            translucent
-            backgroundColor="transparent"
-            barStyle="light-content"
-          />
-
-            <BackArrow
-              title={submodule.name}
-              color={Colors.BLACK}
-              isModal
-              module={module}
-            />
-          <View
-            style={{
-              paddingVertical: windowWidth * (20 / 375),
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: windowWidth * (24 / 375),
-                color: Colors.RED,
-                fontWeight: "bold",
-                marginBottom: windowWidth * (20 / 375),
-              }}
-            >
-              Quiz Finished!
-            </Text>
-            <Text
-              style={{
-                fontSize: windowWidth * (20 / 375),
-                color: Colors.MAROON,
-                marginVertical: windowWidth * (20 / 375),
-              }}
-            >
-              Your score is: {score} / {this.questions.length}
-            </Text>
-            <TouchableOpacity
-              onPress={this.resetQuiz}
-              style={{
-                backgroundColor: Colors.RED,
-                padding: windowWidth * (12 / 375),
-                borderRadius: windowWidth * (4 / 375),
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFF",
-                  fontSize: windowWidth * (16 / 375),
-                  fontWeight: "bold",
-                }}
-              >
-                Restart Quiz
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
+    if (quizFinished && this.state.totalScore < this.originalQuestions.length) {
+      return this.renderResultsScreen();
     }
 
     const currentQuestion = this.questions[currentQuestionIndex];
@@ -259,17 +339,50 @@ class QuizSubmoduleScreen extends Component {
     };
 
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: Colors.MAROON
-      }}>
+      // <View style={{ flex: 1, backgroundColor: Colors.MAROON }}>
+      <LinearGradient
+        colors={['#A91D3A', '#C73659', '#D96078']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ flex: 1, backgroundColor: Colors.MAROON }}
+      >
         <StatusBar
           translucent
           backgroundColor="transparent"
           barStyle="light-content"
         />
-        <BackArrow title={submodule.name} color={"#fff"} />
+        <BackArrow
+          title={submodule.name}
+          color={"#fff"}
+          AIModal={true}
+        />
+        <View
+          style={{
+            width: windowWidth,
+            alignItems: "center",
+            marginTop: 20,
+            marginBottom: windowWidth * (10 / 375),
+          }}
+        >
+          <View
+            style={{
+              height: PROGRESS_BAR_CONSTANTS.HEIGHT,
+              backgroundColor: PROGRESS_BAR_CONSTANTS.BACKGROUND_COLOR,
+              borderRadius: PROGRESS_BAR_CONSTANTS.BORDER_RADIUS,
+              overflow: "hidden",
+              width: windowWidth * PROGRESS_BAR_CONSTANTS.WIDTH_PERCENTAGE,
+            }}
+          >
+            <View
+              style={{
+                height: "100%",
+                backgroundColor: PROGRESS_BAR_CONSTANTS.FILL_COLOR,
+                width: `${progressPercentage}%`,
+                borderRadius: PROGRESS_BAR_CONSTANTS.BORDER_RADIUS,
+              }}
+            />
+          </View>
+        </View>
         <ScrollView
           contentContainerStyle={{
             paddingVertical: windowWidth * (20 / 375),
@@ -281,8 +394,6 @@ class QuizSubmoduleScreen extends Component {
               backgroundColor: Colors.SPACE_GREY_LIGHT,
               padding: windowWidth * (16 / 375),
               borderRadius: windowWidth * (8 / 375),
-              // borderWidth: windowWidth * (1 / 375),
-              // borderColor: Colors.MAROON,
               marginBottom: windowWidth * (16 / 375),
               width: windowWidth * 0.95,
               shadowColor: Colors.BLACK,
@@ -317,25 +428,17 @@ class QuizSubmoduleScreen extends Component {
 
               if (showExplanation) {
                 if (index === selectedChoice) {
-                  // Style for the selected answer
                   buttonStyles = {
                     ...buttonStyles,
                     borderColor: Colors.MAROON,
                     backgroundColor: Colors.MAROON_LIGHT,
                   };
-                } else if (index === currentQuestion.Answer) {
-                  // Correct answer style if not selected
+                }
+                if (index === currentQuestion.Answer) {
                   buttonStyles = {
                     ...buttonStyles,
                     borderColor: "#28a745",
                     backgroundColor: "#d4edda",
-                  };
-                } else {
-                  // Incorrect answer style
-                  buttonStyles = {
-                    ...buttonStyles,
-                    borderColor: Colors.RED,
-                    backgroundColor: Colors.RED_LIGHT,
                   };
                 }
               } else if (selectedChoice === index) {
@@ -351,6 +454,7 @@ class QuizSubmoduleScreen extends Component {
                   key={index}
                   onPress={() => this.handleSelectChoice(index)}
                   style={buttonStyles}
+                  disabled={showExplanation}
                 >
                   <Text
                     style={{
@@ -436,7 +540,7 @@ class QuizSubmoduleScreen extends Component {
                       textAlign: "center",
                     }}
                   >
-                    <Text style={{ fontWeight: "bold" }}>Explanation:{" "}</Text>
+                    <Text style={{ fontWeight: "bold" }}>Explanation: </Text>
                     {currentQuestion.Explanation}
                   </Text>
                 </View>
@@ -466,7 +570,7 @@ class QuizSubmoduleScreen extends Component {
             )}
           </View>
         </ScrollView>
-      </View>
+      </LinearGradient>
     );
   }
 }
