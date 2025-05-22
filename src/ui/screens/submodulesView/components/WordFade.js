@@ -8,13 +8,13 @@ const WordFade = ({ text, width, isActive }) => {
     Animated.sequence([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 500 + text.length * 50, // Longer words fade slower
+        duration: 500 + text.length * 50,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 500,
-        delay: 1000, // Stay visible briefly
+        delay: 1000,
         useNativeDriver: true,
       }),
     ]).start();
@@ -26,7 +26,7 @@ const WordFade = ({ text, width, isActive }) => {
         opacity: fadeAnim,
         marginRight: 5,
         fontSize: 16,
-        color: isActive ? "#FFD700" : "#fff", // Gold for active word
+        color: isActive ? "#FFD700" : "#fff",
         fontWeight: isActive ? "bold" : "normal",
       }}
     >

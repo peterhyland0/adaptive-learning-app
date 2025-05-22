@@ -25,8 +25,6 @@ class FlashCardDeck extends Component {
     this.topCardRef = React.createRef();  }
 
   componentDidUpdate(prevProps, prevState) {
-    // When sessionComplete changes to true and progress hasn't been updated yet,
-    // update the quiz progress.
     if (
       !prevState.sessionComplete &&
       this.state.sessionComplete &&
@@ -142,7 +140,7 @@ class FlashCardDeck extends Component {
     const correctPercentage = total ? (knowList.length / total) * 100 : 0;
     const totalCards = this.props.lessonData.flashcards.length ;
     const currentCardNumber = (knowList.length + dontKnowList.length) ;
-    const progressPercentage = (currentCardNumber / totalCards) * 100; // Changed to percentage
+    const progressPercentage = (currentCardNumber / totalCards) * 100;
     if (sessionComplete && dontKnowList.length > 0) {
       return (
         <View
@@ -271,8 +269,8 @@ class FlashCardDeck extends Component {
           <View
             style={{
               height: "100%",
-              backgroundColor: "#FFFFFF", // White progress
-              width: `${progressPercentage}%`, // Use percentage value
+              backgroundColor: "#FFFFFF",
+              width: `${progressPercentage}%`,
               borderRadius: 5,
             }}
           />
@@ -303,7 +301,7 @@ class FlashCardDeck extends Component {
             justifyContent: "space-around",
             paddingBottom: 20,
             paddingHorizontal: 10,
-            backgroundColor: "transparent", // Optional: slight background for visibility
+            backgroundColor: "transparent",
           }}
         >
           <TouchableOpacity

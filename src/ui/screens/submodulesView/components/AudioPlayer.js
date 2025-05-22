@@ -59,7 +59,7 @@ class AudioPlayer extends Component {
 
     if (currentTime !== prevState.currentTime) {
       const newWords = transcript.words.filter((w) => {
-        const fadeInTime = w.start - 0.5; // Show 0.5s early
+        const fadeInTime = w.start - 0.5;
         const adjustedEnd = w.start === w.end ? w.end + 0.5 : w.end + (w.end - w.start);
         return (
           w &&

@@ -133,7 +133,6 @@ const FlashCard = React.forwardRef((props, ref) => {
         alignSelf: "center",
       }}
     >
-      {/* Front Side: Question */}
       <Animated.View
         pointerEvents={flipped ? "none" : "auto"}
         style={[
@@ -167,7 +166,6 @@ const FlashCard = React.forwardRef((props, ref) => {
         </Text>
       </Animated.View>
 
-      {/* Back Side: Answer */}
       <Animated.View
         pointerEvents={flipped ? "auto" : "none"}
         style={[

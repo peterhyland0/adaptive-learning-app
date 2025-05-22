@@ -1,11 +1,10 @@
-import { firebase } from "@react-native-firebase/auth";  // Correct import for firebase
-import '@react-native-firebase/firestore';  // Ensure Firestore is properly imported
+import { firebase } from "@react-native-firebase/auth";
+import '@react-native-firebase/firestore';
 
 export const getSubmoduleProgressByUser = async (userId, submoduleId) => {
   console.log('User ID passed:', userId, submoduleId);
 
   try {
-    // Query Firestore for the submodule progress based on userId and submoduleId
     const submoduleProgressSnapshot = await firebase
     .firestore()
     .collection('userProgress')  // Reference to 'userProgress' collection

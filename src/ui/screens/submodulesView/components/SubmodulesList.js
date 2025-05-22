@@ -153,7 +153,7 @@ export default function SubmodulesList({ module, submodules, userUid }) {
       flexDirection: "column",
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      backgroundColor: "#121212", // dark background
+      backgroundColor: "#121212",
       width: "100%",
     },
     dragHandleWrapper: {

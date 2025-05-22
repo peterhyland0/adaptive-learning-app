@@ -6,7 +6,7 @@ import LottieView from "lottie-react-native";
 import {SessionContext} from "../../../../util/SessionContext";
 
 export default class WelcomeView extends Component {
-  static contextType = SessionContext; // <-- Add this line
+  static contextType = SessionContext;
 
   constructor(props) {
     super(props);

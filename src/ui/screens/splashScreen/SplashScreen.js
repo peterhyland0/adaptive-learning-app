@@ -8,7 +8,6 @@ import { getSubmoduleProgressByUser } from "../../../api/getSubmoduleProgressByU
 import { downloadAudioFile } from "../../../util/downloadAudioFile";
 import COLORS from "../../../constants/COLORS";
 import {getUserDocument} from "../../../api/getUserDocument";
-import LottieView from "lottie-react-native";
 import AnimatedLoading from "../../../components/animations/AnimatedLoading";
 
 export default class SplashScreen extends Component {

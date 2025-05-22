@@ -226,52 +226,95 @@ export default class UploadManagementScreen extends Component {
       console.warn(err);
     }
   };
+  // createCourse = async () => {
+  //   const {files} = this.state;
+  //   if (files.length === 0) {
+  //     Alert.alert("No file selected", "Please select a file first!");
+  //     return;
+  //   }
+  //
+  //   this.setState({isLoading: true});
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("useruid", auth().currentUser.uid);
+  //
+  //     files.forEach(file => {
+  //       let mimeType = file.type;
+  //       let fileName = file.name;
+  //
+  //       if (!mimeType) {
+  //         if (file.uri.match(/\.(jpg|jpeg)$/)) {
+  //           mimeType = "image/jpeg";
+  //           fileName = fileName || "uploaded_photo.jpg";
+  //         } else if (file.uri.match(/\.png$/)) {
+  //           mimeType = "image/png";
+  //           fileName = fileName || "uploaded_photo.png";
+  //         } else {
+  //           mimeType = "application/pdf";
+  //           fileName = fileName || "uploaded_file.pdf";
+  //         }
+  //       }
+  //
+  //       formData.append("file", {
+  //         uri: file.uri,
+  //         type: mimeType,
+  //         name: fileName,
+  //       });
+  //     });
+  //     console.log("user: ", this.context.session)
+  //     const data = await uploadFile(auth().currentUser.uid, files, this.context.session.user.submodulePreferences);
+  //     console.log("Files uploaded successfully!", data);
+  //     await this.handlePostUpload(auth().currentUser.uid);
+  //   } catch (error) {
+  //     console.error("Upload Error:", error);
+  //     Alert.alert("Error", "An error occurred while uploading the files.");
+  //   } finally {
+  //     this.setState({isLoading: false});
+  //   }
+  // };
   createCourse = async () => {
-    const {files} = this.state;
+    const { files } = this.state;
+    const userUid = auth().currentUser.uid;
+
     if (files.length === 0) {
       Alert.alert("No file selected", "Please select a file first!");
       return;
     }
 
-    this.setState({isLoading: true});
+    this.setState({ isLoading: true });
+
     try {
-      const formData = new FormData();
-      formData.append("useruid", auth().currentUser.uid);
-
-      files.forEach(file => {
-        let mimeType = file.type;
-        let fileName = file.name;
-
-        if (!mimeType) {
-          if (file.uri.match(/\.(jpg|jpeg)$/)) {
-            mimeType = "image/jpeg";
-            fileName = fileName || "uploaded_photo.jpg";
-          } else if (file.uri.match(/\.png$/)) {
-            mimeType = "image/png";
-            fileName = fileName || "uploaded_photo.png";
-          } else {
-            mimeType = "application/pdf";
-            fileName = fileName || "uploaded_file.pdf";
-          }
-        }
-
-        formData.append("file", {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("useruid", userUid);
+        formData.append("submodulepreference", this.context.session.user.submodulePreferences.join(","));
+        formData.append("files", {
           uri: file.uri,
-          type: mimeType,
-          name: fileName,
+          name: file.name,
+          type: file.type,
         });
-      });
-      console.log("user: ", this.context.session)
-      const data = await uploadFile(auth().currentUser.uid, files, this.context.session.user.submodulePreferences);
-      console.log("Files uploaded successfully!", data);
-      await this.handlePostUpload(auth().currentUser.uid);
+
+        const response = await fetch("http://0.0.0.0:8000/api/upload-multiple-files", {
+          method: "POST",
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          body: formData,
+        });
+
+        const result = await response.json();
+        console.log(`${file.name} result:`, result);
+      }
+
+      await this.handlePostUpload(userUid);
     } catch (error) {
       console.error("Upload Error:", error);
       Alert.alert("Error", "An error occurred while uploading the files.");
     } finally {
-      this.setState({isLoading: false});
+      this.setState({ isLoading: false });
     }
   };
+
 
   requestAudioPermission = async () => {
     if (Platform.OS === "android") {

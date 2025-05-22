@@ -339,7 +339,6 @@ class QuizSubmoduleScreen extends Component {
     };
 
     return (
-      // <View style={{ flex: 1, backgroundColor: Colors.MAROON }}>
       <LinearGradient
         colors={['#A91D3A', '#C73659', '#D96078']}
         start={{ x: 0, y: 0 }}

@@ -51,7 +51,6 @@ export default class App extends Component {
 
   render() {
     return (
-      // Wrap your app with GestureHandlerRootView
       // <GestureHandlerRootView style={{ flex: 1 }}>
         <SessionProvider value={{ session: this.state.session, setSession: this.setSession }}>
           <NavigationContainer>

@@ -207,7 +207,7 @@ export default class ModulesManagementScreen extends Component {
                     <Image
                       source={
                         imageError
-                          ? require("../../../assets/images/modules.webp")
+                          ? { uri: module.image }
                           : { uri: module.image }
                       }
                       style={{

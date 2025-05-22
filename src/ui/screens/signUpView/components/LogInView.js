@@ -1,10 +1,9 @@
-// Import necessary components and functions
 import React, { Component } from "react";
 import {View, Text, TouchableOpacity, ActivityIndicator, Dimensions} from "react-native";
 import { TextInput, Snackbar } from "react-native-paper";
 import COLORS from "../../../../constants/COLORS";
 import { login } from "../../../../api/LogIn";
-import FontAwesome from "react-native-vector-icons/FontAwesome"; // Make sure this is the correct import path
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 export default class LogInView extends Component {
   constructor(props) {

@@ -16,8 +16,8 @@ export default class PodcastSubmoduleScreen extends Component {
     this.windowHeight = windowDimensions.height;
     this.state = {
       currentProgress: 0,
-      hasNavigated: false, // flag to prevent repeated actions
-      showModal: false,    // controls modal visibility when finished
+      hasNavigated: false,
+      showModal: false,
     };
   }
 
@@ -176,7 +176,6 @@ export default class PodcastSubmoduleScreen extends Component {
               flex: 1,
               justifyContent: "center",
               alignItems: "center",
-              // backgroundColor: "rgba(0,0,0,0.5)",
             }}
           >
             <View
