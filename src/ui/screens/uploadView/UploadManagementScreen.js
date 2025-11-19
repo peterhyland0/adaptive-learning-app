@@ -205,25 +205,30 @@ export default class UploadManagementScreen extends Component {
   };
 
   requestCameraPermissionAndLaunch = async () => {
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-        {
-          title: "Camera Permission",
-          message: "This app needs access to your camera to take photos.",
-          buttonNeutral: "Ask Me Later",
-          buttonNegative: "Cancel",
-          buttonPositive: "OK",
+    if (Platform.OS === "android") {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: "Camera Permission",
+            message: "This app needs access to your camera to take photos.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          // If permission is granted, proceed to open the camera.
+          await this.takePhotoOrUploadImage();
+        } else {
+          Alert.alert("Permission Denied", "Camera permission is required to take photos.");
         }
-      );
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        // If permission is granted, proceed to open the camera.
-        await this.takePhotoOrUploadImage();
-      } else {
-        Alert.alert("Permission Denied", "Camera permission is required to take photos.");
+      } catch (err) {
+        console.warn(err);
       }
-    } catch (err) {
-      console.warn(err);
+    } else {
+      // iOS doesn't need runtime permission for camera - handled by Info.plist
+      await this.takePhotoOrUploadImage();
     }
   };
   // createCourse = async () => {

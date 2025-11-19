@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Adaptive Learning App",
+    "slug": "adaptive-learning-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.adaptivelearningapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to your camera to take photos of documents and materials for learning.",
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone to record audio for learning materials.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select images and documents for learning.",
+        "NSPhotoLibraryAddUsageDescription": "This app needs to save photos to your library.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location for personalized learning experiences."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.adaptivelearningapp",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app needs access to your photos to select images for learning materials.",
+          "cameraPermission": "This app needs access to your camera to take photos of documents."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "This app uses your location for personalized learning experiences."
+        }
+      ]
+    ]
+  }
+}
