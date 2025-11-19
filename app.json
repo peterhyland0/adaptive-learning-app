@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "adaptive-learning-app",
+    "slug": "adaptive-learning-app",
+    "version": "1.0.0",
+    "sdkVersion": "51.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "android": {
+      "package": "com.anonymous.adaptivelearningapp"
+    }
+  }
+}
