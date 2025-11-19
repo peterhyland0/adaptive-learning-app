@@ -14,12 +14,13 @@
 
 #### For iOS (iPhone):
 4. Run `npx expo prebuild --platform ios` in the same directory.
-5. Navigate to the ios directory: `cd ios`
-6. Install CocoaPods dependencies: `pod install` (requires macOS)
-7. Open the workspace in Xcode: `open AdaptiveLearningApp.xcworkspace`
-8. Connect your iOS device or select a simulator in Xcode
-9. At top level directory run `npx expo start`
-10. In Xcode, build and run the application (⌘R)
+5. **Firebase Setup**: Download `GoogleService-Info.plist` from your Firebase project console and place it in the `ios/AdaptiveLearningApp/` directory. This is required for Firebase authentication and other services.
+6. Navigate to the ios directory: `cd ios`
+7. Install CocoaPods dependencies: `pod install` (requires macOS)
+8. Open the workspace in Xcode: `open AdaptiveLearningApp.xcworkspace`
+9. Connect your iOS device or select a simulator in Xcode
+10. At top level directory run `npx expo start`
+11. In Xcode, build and run the application (⌘R)
 
 #### General:
 9. Edit & save to update on-device.
