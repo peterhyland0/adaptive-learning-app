@@ -1,18 +1,33 @@
 ### To get set-up:
 
 1. Clone the repo.
-2. At top level directory run `npm install`.
+2. At top level directory run `npm install --legacy-peer-deps`.
 3. Create package.json file with necessary dependencies etc.
-4. Then in the same directory run `npx expo prebuild --platform android`.
+
+#### For Android:
+4. Run `npx expo prebuild --platform android` in the same directory.
 5. Open Android Studio at the 'android' directory level and sync the project.
 6. At top level directory with your android device connected run
    `adb reverse tcp:8081 tcp:8081` to set the connection to the correct port.
 7. Then in the same directory run `npx expo start`.
 8. In Android Studio run the application and expo metro will bundle and run the app.
+
+#### For iOS (iPhone):
+4. Run `npx expo prebuild --platform ios` in the same directory.
+5. Navigate to the ios directory: `cd ios`
+6. Install CocoaPods dependencies: `pod install` (requires macOS)
+7. Open the workspace in Xcode: `open AdaptiveLearningApp.xcworkspace`
+8. Connect your iOS device or select a simulator in Xcode
+9. At top level directory run `npx expo start`
+10. In Xcode, build and run the application (⌘R)
+
+#### General:
 9. Edit & save to update on-device.
-10. After installation of any additional libraries (with 'npm install ...'), re-sync libraries in android
+10. After installation of any additional libraries (with 'npm install ...'), re-sync libraries in android/iOS
     and repeat steps to run.
 11. Access EXPO_PUBLIC_SERVER_URL from .env file for API calls via `process.env.EXPO_PUBLIC_SERVER_URL`.
+
+**Note:** iOS development requires a Mac with Xcode installed. For non-Mac users, you can use Expo Go app for testing or use EAS Build for cloud builds.
 
 ### Additional set-up of project...
 

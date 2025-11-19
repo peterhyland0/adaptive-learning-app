@@ -16,6 +16,20 @@ web-build/
 *.key
 *.mobileprovision
 
+# iOS native build artifacts
+ios/Pods/
+ios/build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/DerivedData/
+
+# Android native build artifacts
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+
 # Metro
 .metro-health-check*
 
